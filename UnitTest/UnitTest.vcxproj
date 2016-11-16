@@ -118,10 +118,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SEProject\Database.cpp" />
+    <ClCompile Include="..\SEProject\DialogProcs.cpp" />
     <ClCompile Include="UnitTestMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SEProject\Database.h" />
+    <ClInclude Include="..\SEProject\DialogProcs.h" />
+    <ClInclude Include="..\SEProject\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\SEProject\SEProject.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

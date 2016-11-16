@@ -84,7 +84,7 @@ DataFrame::DataFrame(MYSQL_RES* result)
 	int nColumns = mysql_num_fields(result);
 
 	data.resize(nRows);
-	for (int i = 0; i < data.size(); ++i) {
+	for (size_t i = 0; i < data.size(); ++i) {
 		data[i].resize(nColumns);
 	}
 

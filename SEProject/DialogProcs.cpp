@@ -23,6 +23,7 @@ LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), L"Add");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), L"Delete");
 		return true;
@@ -104,8 +105,8 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 
 LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	char login_user_name[20];
-	char login_password[20];
+	char loginUserName[20];
+	char loginPassword[20];
 
 	switch (message) {
 	case WM_INITDIALOG:
@@ -115,9 +116,9 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam)
 		{
 		case IDOK:
-			GetDlgItemTextA(hwnd, IDC_USERNAME, login_user_name, 20);
-			GetDlgItemTextA(hwnd, IDC_PASSWORD, login_password, 20);
-			if (dataServer.login(login_user_name, login_password))
+			GetDlgItemTextA(hwnd, IDC_USERNAME, loginUserName, 20);
+			GetDlgItemTextA(hwnd, IDC_PASSWORD, loginPassword, 20);
+			if (dataServer.login(loginUserName, loginPassword))
 				EndDialog(hwnd, 0);
 
 			return TRUE;
