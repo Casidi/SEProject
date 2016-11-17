@@ -33,10 +33,10 @@ DataServer::~DataServer()
 	mysql_close(&server);
 }
 
-bool DataServer::login(string userName, string password)
+bool DataServer::login(string userID, string password)
 {
-	string query = formatQuery("SELECT * FROM staff WHERE name='%s' AND password='%s';",
-		userName.c_str(), password.c_str());
+	string query = formatQuery("SELECT * FROM staff WHERE id='%s' AND password='%s';",
+		userID.c_str(), password.c_str());
 
 	DataFrame df = makeQuery(query);
 

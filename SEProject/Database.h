@@ -30,7 +30,7 @@ class DataServer {
 public:
 	DataServer();
 	~DataServer();
-	bool login(string userName, string password);
+	bool login(string userID, string password);
 	bool getIsLogined();
 	bool getIsConnected();
 	string formatQuery(string format, ...);
