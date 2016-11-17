@@ -5,14 +5,22 @@
 
 using namespace std;
 
+class Staff {
+public:
+	string id;
+	string password;
+	string name;
+	string authority;
+};
+
 class DataFrame {
 public:
 	DataFrame();
 	DataFrame(MYSQL_RES* result);
-	inline bool isEmpty();
-	inline int  getWidth();
-	inline int getHeight();
-	inline string getItem(int x, int y);
+	bool isEmpty();
+	int  getWidth();
+	int getHeight();
+	string getItem(int x, int y);
 
 private:
 	vector< vector<string> > data;
@@ -25,12 +33,24 @@ public:
 	bool login(string userName, string password);
 	bool getIsLogined();
 	bool getIsConnected();
+	string formatQuery(string format, ...);
+	DataFrame makeQuery(string query);
+
+	bool addStaff(string staffID, 
+		string staffPassword=defaultStaffPassword,
+		string staffName=defaultStaffName,
+		string staffAuthority=defaultStaffAuthority);
+	bool deleteStaff(string staffID);
+	bool setStaffAuthority(string staffID, string staffAuthority);
+	vector<Staff> getAllStaff();
 
 private:
 	MYSQL server;
 	bool isLogined;
 	bool isConnected;
 
-	DataFrame makeQuery(string query);
+	static const string defaultStaffPassword;
+	static const string defaultStaffName;
+	static const string defaultStaffAuthority;
 };
 

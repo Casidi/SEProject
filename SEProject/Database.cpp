@@ -1,9 +1,14 @@
 ﻿#include "Database.h"
 #include <cstdio>
+#include <cstdarg>
 #include <iostream>
 #include <Windows.h>
 
 using namespace std;
+
+const string DataServer::defaultStaffPassword = "00000000";
+const string DataServer::defaultStaffName = "username";
+const string DataServer::defaultStaffAuthority = "labor";
 
 DataServer::DataServer()
 {
@@ -30,11 +35,10 @@ DataServer::~DataServer()
 
 bool DataServer::login(string userName, string password)
 {
-	char query_buffer[128];
-	sprintf_s(query_buffer, 128, "SELECT * FROM staff WHERE name='%s' AND password='%s';",
+	string query = formatQuery("SELECT * FROM staff WHERE name='%s' AND password='%s';",
 		userName.c_str(), password.c_str());
 
-	DataFrame df = makeQuery(query_buffer);
+	DataFrame df = makeQuery(query);
 
 	if (df.isEmpty()) {
 		cout << "failed to login" << endl;
@@ -54,6 +58,59 @@ bool DataServer::getIsLogined()
 bool DataServer::getIsConnected()
 {
 	return isConnected;
+}
+
+string DataServer::formatQuery(string format, ...)
+{
+	char queryBuffer[128];
+	strcpy_s(queryBuffer, format.c_str());
+
+	va_list vl;
+	va_start(vl, format);
+	vsprintf_s(queryBuffer, format.c_str(), vl);
+	va_end(vl);
+
+	return string(queryBuffer);
+}
+
+bool DataServer::addStaff(string staffID,
+	string staffPassword,
+	string staffName,
+	string staffAuthority) {
+	string query = formatQuery("SELECT * FROM staff WHERE id = '%s';", staffID.c_str());
+	
+	DataFrame result = makeQuery(query);
+	if (result.isEmpty()) {
+		query = formatQuery(
+			"INSERT INTO staff VALUES('%s', '%s', '%s', '%s');",
+			staffID.c_str(),
+			staffPassword.c_str(),
+			staffName.c_str(),
+			staffAuthority.c_str()
+			);
+		makeQuery(query);
+		return true;
+	}
+	else {
+		cout << "staff already exists" << endl;
+		return false;
+	}
+}
+
+bool DataServer::deleteStaff(string staffID) {
+	string query = formatQuery("DELETE FROM staff WHERE id='%s';", staffID.c_str());
+	makeQuery(query);
+	return true;
+}
+
+bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
+{
+	return false;
+}
+
+vector<Staff> DataServer::getAllStaff()
+{
+	return vector<Staff>();
 }
 
 DataFrame DataServer::makeQuery(string query)
@@ -113,5 +170,7 @@ int DataFrame::getHeight()
 
 string DataFrame::getItem(int x, int y)
 {
+	if (x > getWidth()-1 || y > getHeight()-1 || isEmpty() == true)
+		return string("");
 	return data[x][y];
 }
