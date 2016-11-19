@@ -14,9 +14,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 #endif
 {
 	hInst = GetModuleHandle(NULL);
-
+	
 	if (dataServer.getIsConnected() == false) {
-		MessageBox(NULL, "Failed to connect to server", "Error", MB_OK | MB_ICONINFORMATION);
+		MessageBoxA(NULL, "Failed to connect to server", "Error", MB_OK | MB_ICONINFORMATION);
 		return 0;
 	}
 
@@ -24,8 +24,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 	if (dataServer.getIsLogined() == false)
 		return 0;
 
-	//get the authority of current user
-	//set the states of buttons according to the authority(in the dialog initiation)
 	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_MAIN), NULL, (DLGPROC)MainDialogProc);
 
     return 0;

@@ -1,5 +1,6 @@
 ﻿#include "DialogProcs.h"
 #include <windowsx.h>
+#include <CommCtrl.h>
 #include <iostream>
 
 using namespace std;
@@ -19,18 +20,110 @@ void moveToCenter(HWND target) {
 	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, TRUE);
 }
 
+void updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet) {
+	LVITEM lvi;
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = 0;
+	lvi.iSubItem = 0;
+	lvi.cchTextMax = 256;
+
+	ListView_DeleteAllItems(hwndLVTarget);
+	for (int i = 0; i < dataToSet.size(); ++i) {
+		lvi.iItem = 0;
+		lvi.pszText = (LPSTR)dataToSet[i].id.c_str();
+		ListView_InsertItem(hwndLVTarget, &lvi);
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)dataToSet[i].name.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)dataToSet[i].authority.c_str());
+	}
+}
+
+void updateListViewFromServer(HWND hwndLVTarget) {
+	vector<Staff> temp;
+	temp = dataServer.getAllStaffExceptCurrentUser();
+	updateListViewFromData(hwndLVTarget, temp);
+}
+
+void initListView(HWND hwndLVTarget) {
+	LVCOLUMN lvc;
+
+	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+	ZeroMemory(&lvc, sizeof(LVCOLUMN));
+	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	lvc.cx = 100;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.pszText = TEXT("ID");
+	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("Name");
+	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
+
+	lvc.pszText = TEXT("Position");
+	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
+
+	updateListViewFromServer(hwndLVTarget);
+}
+
+void handleAddStaff(HWND hwndDialog) {
+	char textBuffer[32];
+	string staffID, staffPosition;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
+	staffID = string(textBuffer);
+	ComboBox_GetText(GetDlgItem(hwndDialog, IDC_COMBO1), textBuffer, 32);
+	staffPosition = string(textBuffer);
+
+	dataServer.addStaff(staffID, DataServer::defaultStaffPassword, DataServer::defaultStaffName, staffPosition);
+	updateListViewFromServer(GetDlgItem(hwndDialog, IDC_LIST1));
+}
+
+void handleDeleteStaff(HWND hwndDialog) {
+	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
+	LVITEM lvi;
+	char textBuffer[32];
+
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.pszText = textBuffer;
+	lvi.cchTextMax = 32;
+
+	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
+	while (selectedIndex != -1) {
+		lvi.iItem = selectedIndex;
+		ListView_GetItem(hwndLV, &lvi);
+		dataServer.deleteStaff(string(lvi.pszText));
+		ListView_DeleteItem(hwndLV, selectedIndex);
+		--selectedIndex;
+		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	}
+	updateListViewFromServer(hwndLV);
+}
+
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), L"Add");
-		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), L"Delete");
-		return true;
+		initListView(GetDlgItem(hwnd, IDC_LIST1));	
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
+		ComboBox_SelectString(GetDlgItem(hwnd, IDC_COMBO1), -1, "labor");
+		return TRUE;
+
 	case WM_COMMAND:
 		switch (wParam)
 		{
-		case IDOK:
+		case IDC_ADDSTAFF:
+			cout << "adding staff..." << endl;
+			handleAddStaff(hwnd);
+			return TRUE;
+		case IDC_DELETESTAFF:
+			cout << "deleting staffs..." << endl;
+			handleDeleteStaff(hwnd);
+			return TRUE;
+
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
@@ -59,6 +152,7 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	return FALSE;
 }
 
+//TODO: filter buttons according to the authority of current user
 LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {

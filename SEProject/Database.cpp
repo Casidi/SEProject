@@ -46,6 +46,7 @@ bool DataServer::login(string userID, string password)
 		return false;
 	}
 
+	currentUser = getStaffFromID(userID);
 	isLogined = true;
 	return true;
 }
@@ -77,6 +78,9 @@ bool DataServer::addStaff(string staffID,
 	string staffPassword,
 	string staffName,
 	string staffAuthority) {
+	if (staffID.empty())
+		return false;
+
 	string query = formatQuery("SELECT * FROM staff WHERE id = '%s';", staffID.c_str());
 	
 	DataFrame result = makeQuery(query);
@@ -110,7 +114,41 @@ bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 
 vector<Staff> DataServer::getAllStaff()
 {
-	return vector<Staff>();
+	DataFrame dataFromQuery = makeQuery("SELECT * FROM staff ORDER BY id DESC;");
+	vector<Staff> result;
+
+	Staff buffer;
+	for (int i = 0; i < dataFromQuery.getHeight(); ++i) {
+		buffer.id = dataFromQuery.getItem(i, 0);
+		buffer.password = dataFromQuery.getItem(i, 1);
+		buffer.name = dataFromQuery.getItem(i, 2);
+		buffer.authority = dataFromQuery.getItem(i, 3);
+		result.push_back(buffer);
+	}
+	return result;
+}
+
+vector<Staff> DataServer::getAllStaffExceptCurrentUser()
+{
+	vector<Staff> result = getAllStaff();
+	vector<Staff>::iterator iter = find(result.begin(), result.end(), currentUser);
+	if (iter != result.end()) {
+		result.erase(iter);
+	}
+	return result;
+}
+
+Staff DataServer::getStaffFromID(string staffID)
+{
+	string query = formatQuery("SELECT * FROM staff WHERE id='%s';", staffID.c_str());
+	DataFrame queryResult = makeQuery(query);
+	Staff result;
+
+	result.id = queryResult.getItem(0, 0);
+	result.password = queryResult.getItem(0, 1);
+	result.name = queryResult.getItem(0, 2);
+	result.authority = queryResult.getItem(0, 3);
+	return result;
 }
 
 DataFrame DataServer::makeQuery(string query)
@@ -168,9 +206,14 @@ int DataFrame::getHeight()
 	return data.size();
 }
 
-string DataFrame::getItem(int x, int y)
+string DataFrame::getItem(int rowIndex, int columnIndex)
 {
-	if (x > getWidth()-1 || y > getHeight()-1 || isEmpty() == true)
+	if (rowIndex > getHeight()-1 || columnIndex > getWidth()-1 || isEmpty() == true)
 		return string("");
-	return data[x][y];
+	return data[rowIndex][columnIndex];
+}
+
+bool Staff::operator==(const Staff & a)
+{
+	return (id == a.id) && (password == a.password) && (name == a.name) && (authority == a.authority);
 }

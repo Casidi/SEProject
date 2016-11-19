@@ -38,5 +38,18 @@ namespace UnitTest
 				Assert::Fail(L"delete user failed");
 			}
 		}
+
+		/*TEST_METHOD(BuildDatabase) {
+			DataServer server;
+			char buffer[32];
+
+			sprintf_s(buffer, 32, "A%03d", 4);
+			server.addStaff(buffer);
+
+			for (int i = 5; i <= 23; ++i) {
+				sprintf_s(buffer, 32, "A%03d", i);
+				server.addStaff(buffer);
+			}
+		}*/
 	};
 }

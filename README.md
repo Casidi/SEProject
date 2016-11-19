@@ -5,10 +5,9 @@ The Software Engineering term project in fall 2016.
 ### Required Files
 * All files on github
 * [mysql.zip](https://drive.google.com/file/d/0B5SEfPKgXclXRDdRX1huTjF6M2s/view?usp=sharing)
-* [googletest.zip](https://drive.google.com/open?id=0B5SEfPKgXclXMjViQ085cDZZaEk)
 
 ### Steps
-1. Extract mysql.zip and googletest.zip to the project folder.
+1. Extract mysql.zip to the project folder.
 2. Open the SEProject.sln with Visual Studio.
 3. Press F7 to build project.
 

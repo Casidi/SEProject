@@ -11,6 +11,7 @@ public:
 	string password;
 	string name;
 	string authority;
+	bool operator==(const Staff& a);
 };
 
 class DataFrame {
@@ -20,7 +21,7 @@ public:
 	bool isEmpty();
 	int  getWidth();
 	int getHeight();
-	string getItem(int x, int y);
+	string getItem(int, int);
 
 private:
 	vector< vector<string> > data;
@@ -43,14 +44,18 @@ public:
 	bool deleteStaff(string staffID);
 	bool setStaffAuthority(string staffID, string staffAuthority);
 	vector<Staff> getAllStaff();
+	vector<Staff> getAllStaffExceptCurrentUser();
+
+	static const string defaultStaffPassword;
+	static const string defaultStaffName;
+	static const string defaultStaffAuthority;
 
 private:
 	MYSQL server;
 	bool isLogined;
 	bool isConnected;
+	Staff currentUser;
 
-	static const string defaultStaffPassword;
-	static const string defaultStaffName;
-	static const string defaultStaffAuthority;
+	Staff getStaffFromID(string staffID);
 };
 
