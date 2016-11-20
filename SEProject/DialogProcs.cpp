@@ -116,11 +116,9 @@ LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
 		switch (wParam)
 		{
 		case IDC_ADDSTAFF:
-			cout << "adding staff..." << endl;
 			handleAddStaff(hwnd);
 			return TRUE;
 		case IDC_DELETESTAFF:
-			cout << "deleting staffs..." << endl;
 			handleDeleteStaff(hwnd);
 			return TRUE;
 
@@ -163,30 +161,28 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 		switch (wParam)
 		{
 		case IDC_BUTTON1:
-			cout << "add/delete account button clicked" << endl;
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_ACCOUNT), hwnd, (DLGPROC)AccountDialogProc);
 			break;
 		case IDC_BUTTON2:
-			cout << "modify authority button clicked" << endl;
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_AUTHORITY), hwnd, (DLGPROC)AuthorityDialogProc);
 			break;
 		case IDC_BUTTON4:
-			cout << "browse week" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), hwnd, (DLGPROC)BrowseweekDialogProc);
 			break;
 		case IDC_BUTTON5:
-			cout << "browse day" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), hwnd, (DLGPROC)BrowsedayDialogProc);
 			break;
 		case IDC_BUTTON6:
-			cout << "approve leaves" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPROVE), hwnd, (DLGPROC)ApproveleaveDialogProc);
 			break;
 		case IDC_BUTTON7:
-			cout << "set to leave" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_SETLEAVE), hwnd, (DLGPROC)SetleaveDialogProc);
 			break;
 		case IDC_BUTTON8:
-			cout << "apply for leaves" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPLY), hwnd, (DLGPROC)ApplyleaveDialogProc);
 			break;
 		case IDC_BUTTON9:
-			cout << "set password/name" << endl;
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_SETPW), hwnd, (DLGPROC)SetpwDialogProc);
 			break;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
@@ -217,6 +213,114 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 			return TRUE;
 
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK BrowseweekDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK BrowsedayDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK ApproveleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK SetleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK ApplyleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;

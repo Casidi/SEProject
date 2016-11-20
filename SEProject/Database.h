@@ -34,15 +34,12 @@ public:
 	bool login(string userID, string password);
 	bool getIsLogined();
 	bool getIsConnected();
-	string formatQuery(string format, ...);
-	DataFrame makeQuery(string query);
-
+	
 	bool addStaff(string staffID, 
 		string staffPassword=defaultStaffPassword,
 		string staffName=defaultStaffName,
 		string staffAuthority=defaultStaffAuthority);
 	bool deleteStaff(string staffID);
-	bool setStaffAuthority(string staffID, string staffAuthority);
 	vector<Staff> getAllStaff();
 	vector<Staff> getAllStaffExceptCurrentUser();
 
@@ -56,6 +53,8 @@ private:
 	bool isConnected;
 	Staff currentUser;
 
+	string formatQuery(string format, ...);
+	DataFrame makeQuery(string query);
 	Staff getStaffFromID(string staffID);
 };
 

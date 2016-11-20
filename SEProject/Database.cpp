@@ -107,11 +107,6 @@ bool DataServer::deleteStaff(string staffID) {
 	return true;
 }
 
-bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
-{
-	return false;
-}
-
 vector<Staff> DataServer::getAllStaff()
 {
 	DataFrame dataFromQuery = makeQuery("SELECT * FROM staff ORDER BY id DESC;");
