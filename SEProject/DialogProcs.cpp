@@ -100,7 +100,6 @@ void handleDeleteStaff(HWND hwndDialog) {
 	updateListViewFromServer(hwndLV);
 }
 
-//以下修改過
 void handleSetAuthority(HWND hwndDialog) {
 	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
 	LVITEM lvi;
@@ -119,8 +118,7 @@ void handleSetAuthority(HWND hwndDialog) {
 	while (selectedIndex != -1) {
 		lvi.iItem = selectedIndex;
 		ListView_GetItem(hwndLV, &lvi);
-		dataServer.setStaffAuthority(string(lvi.pszText), staffPosition); //ID??
-		--selectedIndex;
+		dataServer.setStaffAuthority(string(lvi.pszText), staffPosition);
 		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
 	}
 	updateListViewFromServer(hwndLV);
@@ -129,10 +127,10 @@ void handleSetAuthority(HWND hwndDialog) {
 void handleSetName(HWND hwndDialog) {
 	char textBuffer[32];
 	string staffName;
-	
+
 	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
 	staffName = string(textBuffer);
-	dataServer.setStaffName(dataServer.getcurrentUserID(), staffName);
+	dataServer.setCurrentUserName(staffName);
 }
 
 void handleSetPassword(HWND hwndDialog) {
@@ -141,7 +139,7 @@ void handleSetPassword(HWND hwndDialog) {
 
 	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT2), textBuffer, 32);
 	staffPassword = string(textBuffer);
-	dataServer.setStaffPassword(dataServer.getcurrentUserID(), staffPassword);
+	dataServer.setCurrentUserPassword(staffPassword);
 }
 
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -194,10 +192,6 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 			handleSetAuthority(hwnd);
 			return TRUE;
 
-		case IDOK:
-			EndDialog(hwnd, 0);
-			return TRUE;
-
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
@@ -217,16 +211,11 @@ LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam)
 		{
 		case IDC_SETNAME:
-			cout << "set name..." << endl;
 			handleSetName(hwnd);
 			return TRUE;
-		case IDC_SETPW:
-			cout << "set password..." << endl;
-			handleSetPassword(hwnd);
-			return TRUE;
 
-		case IDOK:
-			EndDialog(hwnd, 0);
+		case IDC_SETPW:
+			handleSetPassword(hwnd);
 			return TRUE;
 
 		case IDCANCEL:
@@ -237,7 +226,6 @@ LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	}
 	return FALSE;
 }
-//到這為止
 
 //TODO: filter buttons according to the authority of current user
 LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -271,6 +259,7 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPLY), hwnd, (DLGPROC)ApplyleaveDialogProc);
 			break;
 		case IDC_BUTTON9:
+			cout << "set password/name" << endl;
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_SETPW), hwnd, (DLGPROC)SetpwDialogProc);
 			break;
 		case IDCANCEL:
@@ -401,20 +390,3 @@ LRESULT CALLBACK ApplyleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LP
 	return FALSE;
 }
 
-LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message) {
-	case WM_INITDIALOG:
-		return true;
-	case WM_COMMAND:
-		switch (wParam)
-		{
-		case IDOK:
-		case IDCANCEL:
-			EndDialog(hwnd, 0);
-			return TRUE;
-		}
-		break;
-	}
-	return FALSE;
-}

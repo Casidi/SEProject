@@ -107,7 +107,6 @@ bool DataServer::deleteStaff(string staffID) {
 	return true;
 }
 
-//以下修改過
 bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 {
 	if (staffID.empty() || staffAuthority.empty())
@@ -122,38 +121,39 @@ bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 	return true;
 }
 
-bool DataServer::setStaffPassword(string staffID, string staffPassword)
+bool DataServer::setCurrentUserPassword(string staffPassword)
 {
-	if (staffID.empty() || staffPassword.empty())
+	if (staffPassword.empty())
 		return false;
+
+	currentUser.password = staffPassword;
 
 	string query = formatQuery(
 		"UPDATE staff SET password = '%s' WHERE id = '%s';",
-		staffPassword.c_str(),
-		staffID.c_str()
+		currentUser.password.c_str(),
+		currentUser.id.c_str()
 		);
 	makeQuery(query);
+
 	return true;
 }
 
-bool DataServer::setStaffName(string staffID, string staffName)
+bool DataServer::setCurrentUserName(string staffName)
 {
-	if (staffID.empty() || staffName.empty())
+	if (staffName.empty())
 		return false;
+
+	currentUser.name = staffName;
 
 	string query = formatQuery(
 		"UPDATE staff SET name = '%s' WHERE id = '%s';",
-		staffName.c_str(),
-		staffID.c_str()
+		currentUser.name.c_str(),
+		currentUser.id.c_str()
 		);
 	makeQuery(query);
+
 	return true;
 }
-
-string DataServer::getcurrentUserID() {
-	return currentUser.id;
-}
-//到這為止
 
 vector<Staff> DataServer::getAllStaff()
 {

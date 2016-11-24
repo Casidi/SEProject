@@ -18,9 +18,4 @@ namespace UnitTest
 			Assert::AreEqual(frame.getItem(0, 0), string(""));
 		}
 	};
-
-	TEST_CLASS(TestDataServer) {
-	public:
-		
-	};
 }
