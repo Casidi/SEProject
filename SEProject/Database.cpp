@@ -107,6 +107,54 @@ bool DataServer::deleteStaff(string staffID) {
 	return true;
 }
 
+//以下修改過
+bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
+{
+	if (staffID.empty() || staffAuthority.empty())
+		return false;
+
+	string query = formatQuery(
+		"UPDATE staff SET authority = '%s' WHERE id = '%s';",
+		staffAuthority.c_str(),
+		staffID.c_str()
+		);
+	makeQuery(query);
+	return true;
+}
+
+bool DataServer::setStaffPassword(string staffID, string staffPassword)
+{
+	if (staffID.empty() || staffPassword.empty())
+		return false;
+
+	string query = formatQuery(
+		"UPDATE staff SET password = '%s' WHERE id = '%s';",
+		staffPassword.c_str(),
+		staffID.c_str()
+		);
+	makeQuery(query);
+	return true;
+}
+
+bool DataServer::setStaffName(string staffID, string staffName)
+{
+	if (staffID.empty() || staffName.empty())
+		return false;
+
+	string query = formatQuery(
+		"UPDATE staff SET name = '%s' WHERE id = '%s';",
+		staffName.c_str(),
+		staffID.c_str()
+		);
+	makeQuery(query);
+	return true;
+}
+
+string DataServer::getcurrentUserID() {
+	return currentUser.id;
+}
+//到這為止
+
 vector<Staff> DataServer::getAllStaff()
 {
 	DataFrame dataFromQuery = makeQuery("SELECT * FROM staff ORDER BY id DESC;");

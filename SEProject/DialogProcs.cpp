@@ -100,6 +100,50 @@ void handleDeleteStaff(HWND hwndDialog) {
 	updateListViewFromServer(hwndLV);
 }
 
+//以下修改過
+void handleSetAuthority(HWND hwndDialog) {
+	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
+	LVITEM lvi;
+	char textBuffer[32];
+	string staffPosition;
+
+	ComboBox_GetText(GetDlgItem(hwndDialog, IDC_COMBO1), textBuffer, 32);
+	staffPosition = string(textBuffer);
+
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.pszText = textBuffer;
+	lvi.cchTextMax = 32;
+
+	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
+	while (selectedIndex != -1) {
+		lvi.iItem = selectedIndex;
+		ListView_GetItem(hwndLV, &lvi);
+		dataServer.setStaffAuthority(string(lvi.pszText), staffPosition); //ID??
+		--selectedIndex;
+		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	}
+	updateListViewFromServer(hwndLV);
+}
+
+void handleSetName(HWND hwndDialog) {
+	char textBuffer[32];
+	string staffName;
+	
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
+	staffName = string(textBuffer);
+	dataServer.setStaffName(dataServer.getcurrentUserID(), staffName);
+}
+
+void handleSetPassword(HWND hwndDialog) {
+	char textBuffer[32];
+	string staffID, staffPassword;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT2), textBuffer, 32);
+	staffPassword = string(textBuffer);
+	dataServer.setStaffPassword(dataServer.getcurrentUserID(), staffPassword);
+}
+
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
@@ -136,11 +180,24 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		return true;
+		initListView(GetDlgItem(hwnd, IDC_LIST1));
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
+		ComboBox_SelectString(GetDlgItem(hwnd, IDC_COMBO1), -1, "labor");
+		return TRUE;
 	case WM_COMMAND:
 		switch (wParam)
 		{
+		case IDC_SETAUTHORITY:
+			cout << "set authority..." << endl;
+			handleSetAuthority(hwnd);
+			return TRUE;
+
 		case IDOK:
+			EndDialog(hwnd, 0);
+			return TRUE;
+
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
@@ -149,6 +206,38 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	}
 	return FALSE;
 }
+
+LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		return true;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDC_SETNAME:
+			cout << "set name..." << endl;
+			handleSetName(hwnd);
+			return TRUE;
+		case IDC_SETPW:
+			cout << "set password..." << endl;
+			handleSetPassword(hwnd);
+			return TRUE;
+
+		case IDOK:
+			EndDialog(hwnd, 0);
+			return TRUE;
+
+		case IDCANCEL:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+//到這為止
 
 //TODO: filter buttons according to the authority of current user
 LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

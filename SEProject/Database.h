@@ -40,6 +40,12 @@ public:
 		string staffName=defaultStaffName,
 		string staffAuthority=defaultStaffAuthority);
 	bool deleteStaff(string staffID);
+	bool setStaffAuthority(string staffID, string staffAuthority);
+	//以下修改過
+	bool setStaffPassword(string staffID, string staffPassword);
+	bool setStaffName(string staffID, string staffName);
+	string getcurrentUserID();
+	//到這為止
 	vector<Staff> getAllStaff();
 	vector<Staff> getAllStaffExceptCurrentUser();
 
