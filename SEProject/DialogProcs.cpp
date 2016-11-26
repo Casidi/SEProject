@@ -20,7 +20,7 @@ void moveToCenter(HWND target) {
 	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, TRUE);
 }
 
-void updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet) {
+void AccountDialog_updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet) {
 	LVITEM lvi;
 	ZeroMemory(&lvi, sizeof(LVITEM));
 	lvi.mask = LVIF_TEXT;
@@ -38,13 +38,13 @@ void updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet) {
 	}
 }
 
-void updateListViewFromServer(HWND hwndLVTarget) {
+void AccountDialog_updateListViewFromServer(HWND hwndLVTarget) {
 	vector<Staff> temp;
 	temp = dataServer.getAllStaffExceptCurrentUser();
-	updateListViewFromData(hwndLVTarget, temp);
+	AccountDialog_updateListViewFromData(hwndLVTarget, temp);
 }
 
-void initListView(HWND hwndLVTarget) {
+void AccountDialog_initListView(HWND hwndLVTarget) {
 	LVCOLUMN lvc;
 
 	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
@@ -62,10 +62,10 @@ void initListView(HWND hwndLVTarget) {
 	lvc.pszText = TEXT("Position");
 	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
 
-	updateListViewFromServer(hwndLVTarget);
+	AccountDialog_updateListViewFromServer(hwndLVTarget);
 }
 
-void handleAddStaff(HWND hwndDialog) {
+void AccountDialog_handleAddStaff(HWND hwndDialog) {
 	char textBuffer[32];
 	string staffID, staffPosition;
 
@@ -75,10 +75,10 @@ void handleAddStaff(HWND hwndDialog) {
 	staffPosition = string(textBuffer);
 
 	dataServer.addStaff(staffID, DataServer::defaultStaffPassword, DataServer::defaultStaffName, staffPosition);
-	updateListViewFromServer(GetDlgItem(hwndDialog, IDC_LIST1));
+	AccountDialog_updateListViewFromServer(GetDlgItem(hwndDialog, IDC_LIST1));
 }
 
-void handleDeleteStaff(HWND hwndDialog) {
+void AccountDialog_handleDeleteStaff(HWND hwndDialog) {
 	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
 	LVITEM lvi;
 	char textBuffer[32];
@@ -97,10 +97,10 @@ void handleDeleteStaff(HWND hwndDialog) {
 		--selectedIndex;
 		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
 	}
-	updateListViewFromServer(hwndLV);
+	AccountDialog_updateListViewFromServer(hwndLV);
 }
 
-void handleSetAuthority(HWND hwndDialog) {
+void AuthorityDialog_handleSetAuthority(HWND hwndDialog) {
 	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
 	LVITEM lvi;
 	char textBuffer[32];
@@ -121,10 +121,10 @@ void handleSetAuthority(HWND hwndDialog) {
 		dataServer.setStaffAuthority(string(lvi.pszText), staffPosition);
 		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
 	}
-	updateListViewFromServer(hwndLV);
+	AccountDialog_updateListViewFromServer(hwndLV);
 }
 
-void handleSetName(HWND hwndDialog) {
+void SetpwDialog_handleSetName(HWND hwndDialog) {
 	char textBuffer[32];
 	string staffName;
 
@@ -133,7 +133,7 @@ void handleSetName(HWND hwndDialog) {
 	dataServer.setCurrentUserName(staffName);
 }
 
-void handleSetPassword(HWND hwndDialog) {
+void SetpwDialog_handleSetPassword(HWND hwndDialog) {
 	char textBuffer[32];
 	string staffID, staffPassword;
 
@@ -142,12 +142,26 @@ void handleSetPassword(HWND hwndDialog) {
 	dataServer.setCurrentUserPassword(staffPassword);
 }
 
+void BrowseWeekDialog_initComboBox(HWND hwndDialog) {
+	SYSTEMTIME currentTime;
+	GetLocalTime(&currentTime);
+	
+	HWND hwndCombo = GetDlgItem(hwndDialog, IDC_COMBO1);
+	Date today(currentTime.wYear, currentTime.wMonth, currentTime.wDay);
+	vector<string> weekDays = today.getAllDatesInThisWeekAsStrings();
+	for (int i = 0; i < weekDays.size(); ++i)
+		ComboBox_AddString(hwndCombo, weekDays[i].c_str());
+}
+
+void BrowseWeekDialog_initListView(HWND hwndDialog) {
+}
+
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		initListView(GetDlgItem(hwnd, IDC_LIST1));	
+		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));	
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
@@ -158,10 +172,10 @@ LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
 		switch (wParam)
 		{
 		case IDC_ADDSTAFF:
-			handleAddStaff(hwnd);
+			AccountDialog_handleAddStaff(hwnd);
 			return TRUE;
 		case IDC_DELETESTAFF:
-			handleDeleteStaff(hwnd);
+			AccountDialog_handleDeleteStaff(hwnd);
 			return TRUE;
 
 		case IDCANCEL:
@@ -178,7 +192,7 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		initListView(GetDlgItem(hwnd, IDC_LIST1));
+		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
@@ -189,7 +203,7 @@ LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 		{
 		case IDC_SETAUTHORITY:
 			cout << "set authority..." << endl;
-			handleSetAuthority(hwnd);
+			AuthorityDialog_handleSetAuthority(hwnd);
 			return TRUE;
 
 		case IDCANCEL:
@@ -211,11 +225,11 @@ LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		switch (wParam)
 		{
 		case IDC_SETNAME:
-			handleSetName(hwnd);
+			SetpwDialog_handleSetName(hwnd);
 			return TRUE;
 
 		case IDC_SETPW:
-			handleSetPassword(hwnd);
+			SetpwDialog_handleSetPassword(hwnd);
 			return TRUE;
 
 		case IDCANCEL:
@@ -244,7 +258,7 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_AUTHORITY), hwnd, (DLGPROC)AuthorityDialogProc);
 			break;
 		case IDC_BUTTON4:
-			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), hwnd, (DLGPROC)BrowseweekDialogProc);
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), hwnd, (DLGPROC)BrowseWeekDialogProc);
 			break;
 		case IDC_BUTTON5:
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), hwnd, (DLGPROC)BrowsedayDialogProc);
@@ -300,15 +314,25 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	return FALSE;
 }
 
-LRESULT CALLBACK BrowseweekDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK BrowseWeekDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		BrowseWeekDialog_initComboBox(hwnd);
+		BrowseWeekDialog_initListView(hwnd);
 		return true;
+
 	case WM_COMMAND:
+		if ((HWND)lParam == GetDlgItem(hwnd, IDC_COMBO1)) {
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				cout << "combo clicked" << endl;
+				return TRUE;
+			}
+		}
+
 		switch (wParam)
 		{
-		case IDOK:
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
