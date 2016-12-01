@@ -15,6 +15,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 {
 	hInst = GetModuleHandle(NULL);
 
+	//dataServer.resetDatabase();
+	//return 0;
 	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), NULL, (DLGPROC)BrowseWeekDialogProc);
 	return 0;
 	

@@ -1,4 +1,6 @@
-﻿#include "DialogProcs.h"
+﻿//TODO: add method to DataServer to reset the database to the initial data
+
+#include "DialogProcs.h"
 #include <windowsx.h>
 #include <CommCtrl.h>
 #include <iostream>
@@ -18,6 +20,12 @@ void moveToCenter(HWND target) {
 	screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, TRUE);
+}
+
+Date getTody() {
+	SYSTEMTIME currentTime;
+	GetLocalTime(&currentTime);
+	return Date(currentTime.wYear, currentTime.wMonth, currentTime.wDay);
 }
 
 void AccountDialog_updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet) {
@@ -143,17 +151,39 @@ void SetpwDialog_handleSetPassword(HWND hwndDialog) {
 }
 
 void BrowseWeekDialog_initComboBox(HWND hwndDialog) {
-	SYSTEMTIME currentTime;
-	GetLocalTime(&currentTime);
-	
 	HWND hwndCombo = GetDlgItem(hwndDialog, IDC_COMBO1);
-	Date today(currentTime.wYear, currentTime.wMonth, currentTime.wDay);
+	Date today = getTody();
 	vector<string> weekDays = today.getAllDatesInThisWeekAsStrings();
 	for (int i = 0; i < weekDays.size(); ++i)
 		ComboBox_AddString(hwndCombo, weekDays[i].c_str());
 }
 
 void BrowseWeekDialog_initListView(HWND hwndDialog) {
+	LVCOLUMN lvc;
+	HWND hwndLVTarget = GetDlgItem(hwndDialog, IDC_LIST3);
+	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+	ZeroMemory(&lvc, sizeof(LVCOLUMN));
+	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	lvc.cx = 100;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.pszText = TEXT("ID");
+	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("Name");
+	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
+
+	lvc.pszText = TEXT("Status");
+	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
+
+	Date today = getTody();
+	dataServer.generateWeek(today);
+}
+
+void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
+	char buffer[16];
+	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
+	cout << buffer << endl;
 }
 
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -327,6 +357,7 @@ LRESULT CALLBACK BrowseWeekDialogProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		if ((HWND)lParam == GetDlgItem(hwnd, IDC_COMBO1)) {
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				cout << "combo clicked" << endl;
+				BrowseWeekDialog_handleDateSelected(hwnd);
 				return TRUE;
 			}
 		}

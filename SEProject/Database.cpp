@@ -34,6 +34,21 @@ DataServer::~DataServer()
 	mysql_close(&server);
 }
 
+void DataServer::resetDatabase()
+{
+	makeQuery("DELETE FROM staff;");
+	makeQuery("DELETE FROM schedule;");
+
+	addStaff("A001", defaultStaffPassword, defaultStaffName, "chief");
+	addStaff("A002", defaultStaffPassword, defaultStaffName, "supervisor");
+	addStaff("A003", defaultStaffPassword, defaultStaffName, "supervisor");
+	for (int i = 4; i <= 23; ++i) {
+		char buffer[32];
+		sprintf_s(buffer, "A%03d", i);
+		addStaff(buffer);
+	}
+}
+
 bool DataServer::login(string userID, string password)
 {
 	string query = formatQuery("SELECT * FROM staff WHERE id='%s' AND password='%s';",
@@ -62,9 +77,27 @@ bool DataServer::getIsConnected()
 	return isConnected;
 }
 
+bool DataServer::addSchedule(string date, string staffID, string status, string reason, string isApproved)
+{
+	string query = formatQuery("INSERT INTO schedule VALUES('%s', '%s', '%s', '%s', '%s');",
+		date.c_str(), staffID.c_str(), status.c_str(), reason.c_str(), isApproved.c_str());
+	makeQuery(query);
+	return true;
+}
+
+bool DataServer::generateWeek(Date dayInTheWeek)
+{
+	//generate from Sunday
+	dayInTheWeek.subDays(dayInTheWeek.getWeekDay());
+
+	//check if the schedule of this week exists
+	//generate if there is none
+	return true;
+}
+
 string DataServer::formatQuery(string format, ...)
 {
-	char queryBuffer[128];
+	char queryBuffer[256];
 	strcpy_s(queryBuffer, format.c_str());
 
 	va_list vl;
@@ -94,6 +127,28 @@ bool DataServer::addStaff(string staffID,
 			staffAuthority.c_str()
 			);
 		makeQuery(query);
+
+		//add initial schedule
+		if (staffAuthority == "labor") {
+			if (getNumberOfLabor() % 2 == 1) {
+				addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+			}
+			else {
+				addSchedule("2016/11/13", staffID, "late", "NULL", "Y");
+			}
+		}
+		else if (staffAuthority == "supervisor") {
+			if (getNumberOfSupervisor() % 2 == 1) {
+				addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+			}
+			else {
+				addSchedule("2016/11/13", staffID, "late", "NULL", "Y");
+			}
+		}
+		else if (staffAuthority == "chief") {
+			addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+		}
+
 		return true;
 	}
 	else {
@@ -182,6 +237,18 @@ vector<Staff> DataServer::getAllStaffExceptCurrentUser()
 	return result;
 }
 
+int DataServer::getNumberOfLabor()
+{
+	DataFrame result = makeQuery("SELECT COUNT(*) FROM staff WHERE authority='labor';");
+	return atoi(result.getItem(0, 0).c_str());
+}
+
+int DataServer::getNumberOfSupervisor()
+{
+	DataFrame result = makeQuery("SELECT COUNT(*) FROM staff WHERE authority='supervisor';");
+	return atoi(result.getItem(0, 0).c_str());
+}
+
 Staff DataServer::getStaffFromID(string staffID)
 {
 	string query = formatQuery("SELECT * FROM staff WHERE id='%s';", staffID.c_str());
@@ -205,8 +272,8 @@ DataFrame DataServer::makeQuery(string query)
 
 	MYSQL_RES *result = mysql_store_result(&server);
 	if (result == NULL) {
-		cout << "Query returns empty result\n";
-		cout << "\t=>" << query << endl;
+		//cout << "Query returns empty result\n";
+		//cout << "\t=>" << query << endl;
 		return DataFrame();
 	}
 
