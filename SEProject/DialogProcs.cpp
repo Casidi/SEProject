@@ -22,7 +22,7 @@ void moveToCenter(HWND target) {
 	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, TRUE);
 }
 
-Date getTody() {
+Date getToday() {
 	SYSTEMTIME currentTime;
 	GetLocalTime(&currentTime);
 	return Date(currentTime.wYear, currentTime.wMonth, currentTime.wDay);
@@ -152,7 +152,7 @@ void SetpwDialog_handleSetPassword(HWND hwndDialog) {
 
 void BrowseWeekDialog_initComboBox(HWND hwndDialog) {
 	HWND hwndCombo = GetDlgItem(hwndDialog, IDC_COMBO1);
-	Date today = getTody();
+	Date today = getToday();
 	vector<string> weekDays = today.getAllDatesInThisWeekAsStrings();
 	for (int i = 0; i < weekDays.size(); ++i)
 		ComboBox_AddString(hwndCombo, weekDays[i].c_str());
@@ -175,15 +175,33 @@ void BrowseWeekDialog_initListView(HWND hwndDialog) {
 
 	lvc.pszText = TEXT("Status");
 	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
-
-	Date today = getTody();
-	dataServer.generateWeek(today);
 }
 
 void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
 	char buffer[16];
 	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
 	cout << buffer << endl;
+	cout << ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)) << endl;
+
+	vector<Schedule> scheduleThisDay = dataServer.getDaySchedule(Date(buffer));
+
+	LVITEM lvi;
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = 0;
+	lvi.iSubItem = 0;
+	lvi.cchTextMax = 256;
+
+	HWND hwndLVTarget = GetDlgItem(hwndDialog, IDC_LIST3);
+	ListView_DeleteAllItems(hwndLVTarget);
+	for (int i = 0; i < scheduleThisDay.size(); ++i) {
+		lvi.iItem = 0;
+		lvi.pszText = (LPSTR)scheduleThisDay[i].staffID.c_str();
+		ListView_InsertItem(hwndLVTarget, &lvi);
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)scheduleThisDay[i].staffID.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)scheduleThisDay[i].status.c_str());
+	}
+
 }
 
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

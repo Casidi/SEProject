@@ -85,16 +85,6 @@ bool DataServer::addSchedule(string date, string staffID, string status, string 
 	return true;
 }
 
-bool DataServer::generateWeek(Date dayInTheWeek)
-{
-	//generate from Sunday
-	dayInTheWeek.subDays(dayInTheWeek.getWeekDay());
-
-	//check if the schedule of this week exists
-	//generate if there is none
-	return true;
-}
-
 string DataServer::formatQuery(string format, ...)
 {
 	char queryBuffer[256];
@@ -249,6 +239,54 @@ int DataServer::getNumberOfSupervisor()
 	return atoi(result.getItem(0, 0).c_str());
 }
 
+string DataServer::getStaffPositionFromID(string staffID)
+{
+	string query = formatQuery("SELECT authority FROM staff WHERE id='%s';", staffID.c_str());
+	DataFrame result = makeQuery(query);
+	return result.getItem(0, 0);
+}
+
+vector<Schedule> DataServer::getScheduleBase()
+{
+	vector<Schedule> result;
+	DataFrame queryResult = makeQuery("SELECT * FROM schedule \
+		WHERE date='2016/11/13' AND (status='early' OR status='late') \
+		ORDER BY staff_id DESC;");
+	for (int i = 0; i < queryResult.getHeight(); ++i) {
+		Schedule temp;
+		temp.date = queryResult.getItem(i, 0);
+		temp.staffID = queryResult.getItem(i, 1);
+		temp.status = queryResult.getItem(i, 2);
+		temp.reason = queryResult.getItem(i, 3);
+		temp.isApproved = queryResult.getItem(i, 4);
+		result.push_back(temp);
+	}
+	return result;
+}
+
+vector<Schedule> DataServer::getDaySchedule(Date target)
+{
+	vector<Schedule> base = getScheduleBase();
+	Date firstDayInWeek = target;
+	firstDayInWeek.subDays(firstDayInWeek.getWeekDay());
+
+	int diff = firstDayInWeek.diffDays(Date(2016, 11, 13));
+	diff /= 7;
+	if(diff%2 == 1) {
+		for (int i = 0; i < base.size(); ++i) {
+			if (getStaffPositionFromID(base[i].staffID) != "chief") {
+				if (base[i].status == "early")
+					base[i].status = "late";
+				else if (base[i].status == "late")
+					base[i].status = "early";
+			}
+		}
+	}
+
+	//TODO: for each staff, check if there are applications for sick, leave, or ....
+	return base;
+}
+
 Staff DataServer::getStaffFromID(string staffID)
 {
 	string query = formatQuery("SELECT * FROM staff WHERE id='%s';", staffID.c_str());
@@ -330,9 +368,7 @@ bool Staff::operator==(const Staff & a)
 }
 
 vector<string> Date::getAllDatesInThisWeekAsStrings() {
-	Date temp = *this;
-	while (temp.getWeekDay() != 0)
-		temp.subDays(1);
+	Date temp = getFirstDateThisWeek();
 
 	vector<string> result;
 	for (int i = 0; i < 7; ++i) {
@@ -457,6 +493,19 @@ int Date::diffDays(Date target) {
 	return result;
 }
 
+Date::Date(string s)
+{
+	for (int i = 0; i < s.length(); ++i)
+		if (s[i] == '/')
+			s[i] = ' ';
+	stringstream ss(s);
+	int y, m, d;
+	ss >> y >> m >> d;
+	year = y;
+	month = m-1;
+	day = d;
+}
+
 int Date::getWeekDay() {
 	Date origin(2016, 11, 20);
 	int diff = this->diffDays(origin);
@@ -471,6 +520,13 @@ string Date::toString() {
 		<< month + 1 << "/"
 		<< day;
 	return ss.str();
+}
+
+Date Date::getFirstDateThisWeek()
+{
+	Date temp = *this;
+	temp.subDays(temp.getWeekDay());
+	return temp;
 }
 
 int Date::getNumDaysOfMonth(int target_month) {
