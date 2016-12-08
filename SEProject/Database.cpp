@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <iostream>
+#include <sstream>
 #include <Windows.h>
 
 using namespace std;
@@ -33,6 +34,21 @@ DataServer::~DataServer()
 	mysql_close(&server);
 }
 
+void DataServer::resetDatabase()
+{
+	makeQuery("DELETE FROM staff;");
+	makeQuery("DELETE FROM schedule;");
+
+	addStaff("A001", defaultStaffPassword, defaultStaffName, "chief");
+	addStaff("A002", defaultStaffPassword, defaultStaffName, "supervisor");
+	addStaff("A003", defaultStaffPassword, defaultStaffName, "supervisor");
+	for (int i = 4; i <= 23; ++i) {
+		char buffer[32];
+		sprintf_s(buffer, "A%03d", i);
+		addStaff(buffer);
+	}
+}
+
 bool DataServer::login(string userID, string password)
 {
 	string query = formatQuery("SELECT * FROM staff WHERE id='%s' AND password='%s';",
@@ -61,9 +77,17 @@ bool DataServer::getIsConnected()
 	return isConnected;
 }
 
+bool DataServer::addSchedule(string date, string staffID, string status, string reason, string isApproved)
+{
+	string query = formatQuery("INSERT INTO schedule VALUES('%s', '%s', '%s', '%s', '%s');",
+		date.c_str(), staffID.c_str(), status.c_str(), reason.c_str(), isApproved.c_str());
+	makeQuery(query);
+	return true;
+}
+
 string DataServer::formatQuery(string format, ...)
 {
-	char queryBuffer[128];
+	char queryBuffer[256];
 	strcpy_s(queryBuffer, format.c_str());
 
 	va_list vl;
@@ -93,6 +117,28 @@ bool DataServer::addStaff(string staffID,
 			staffAuthority.c_str()
 			);
 		makeQuery(query);
+
+		//add initial schedule
+		if (staffAuthority == "labor") {
+			if (getNumberOfLabor() % 2 == 1) {
+				addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+			}
+			else {
+				addSchedule("2016/11/13", staffID, "late", "NULL", "Y");
+			}
+		}
+		else if (staffAuthority == "supervisor") {
+			if (getNumberOfSupervisor() % 2 == 1) {
+				addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+			}
+			else {
+				addSchedule("2016/11/13", staffID, "late", "NULL", "Y");
+			}
+		}
+		else if (staffAuthority == "chief") {
+			addSchedule("2016/11/13", staffID, "early", "NULL", "Y");
+		}
+
 		return true;
 	}
 	else {
@@ -181,6 +227,73 @@ vector<Staff> DataServer::getAllStaffExceptCurrentUser()
 	return result;
 }
 
+int DataServer::getNumberOfLabor()
+{
+	DataFrame result = makeQuery("SELECT COUNT(*) FROM staff WHERE authority='labor';");
+	return atoi(result.getItem(0, 0).c_str());
+}
+
+int DataServer::getNumberOfSupervisor()
+{
+	DataFrame result = makeQuery("SELECT COUNT(*) FROM staff WHERE authority='supervisor';");
+	return atoi(result.getItem(0, 0).c_str());
+}
+
+string DataServer::getStaffPositionFromID(string staffID)
+{
+	string query = formatQuery("SELECT authority FROM staff WHERE id='%s';", staffID.c_str());
+	DataFrame result = makeQuery(query);
+	return result.getItem(0, 0);
+}
+
+vector<Schedule> DataServer::getScheduleBase()
+{
+	vector<Schedule> result;
+	DataFrame queryResult = makeQuery("SELECT * FROM schedule \
+		WHERE date='2016/11/13' AND (status='early' OR status='late') \
+		ORDER BY staff_id DESC;");
+	for (int i = 0; i < queryResult.getHeight(); ++i) {
+		Schedule temp;
+		temp.date = queryResult.getItem(i, 0);
+		temp.staffID = queryResult.getItem(i, 1);
+		temp.status = queryResult.getItem(i, 2);
+		temp.reason = queryResult.getItem(i, 3);
+		temp.isApproved = queryResult.getItem(i, 4);
+		result.push_back(temp);
+	}
+	return result;
+}
+
+vector<Schedule> DataServer::getDaySchedule(Date target)
+{
+	vector<Schedule> base = getScheduleBase();
+	for (int i = 0; i < base.size(); ++i)
+		base[i].date = target.toString();
+
+	Date firstDayInWeek = target;
+	firstDayInWeek.subDays(firstDayInWeek.getWeekDay());
+
+	int diff = firstDayInWeek.diffDays(Date(2016, 11, 13));
+	diff /= 7;
+	if(diff%2 == 1) {
+		for (int i = 0; i < base.size(); ++i) {
+			if (getStaffPositionFromID(base[i].staffID) != "chief") {
+				if (base[i].status == "early")
+					base[i].status = "late";
+				else if (base[i].status == "late")
+					base[i].status = "early";
+			}
+		}
+	}
+
+	modifyScheduleBase(base, "compensatory");
+	modifyScheduleBase(base, "business");
+	modifyScheduleBase(base, "leave");
+	modifyScheduleBase(base, "sick");
+
+	return base;
+}
+
 Staff DataServer::getStaffFromID(string staffID)
 {
 	string query = formatQuery("SELECT * FROM staff WHERE id='%s';", staffID.c_str());
@@ -194,6 +307,23 @@ Staff DataServer::getStaffFromID(string staffID)
 	return result;
 }
 
+void DataServer::modifyScheduleBase(vector<Schedule>& base, string targetStatus)
+{
+	for (int i = 0; i < base.size(); ++i) {
+		string query = formatQuery("SELECT * FROM schedule \
+						WHERE staff_id='%s' AND date='%s' \
+						AND is_approved='Y' AND status='%s';",
+			base[i].staffID.c_str(),
+			base[i].date.c_str(),
+			targetStatus.c_str());
+		DataFrame result = makeQuery(query);
+		if (result.isEmpty() == false) {
+			base[i].status = targetStatus;
+			base[i].reason = result.getItem(0, 3);
+		}
+	}
+}
+
 DataFrame DataServer::makeQuery(string query)
 {
 	int err = mysql_query(&server, query.c_str());
@@ -204,8 +334,8 @@ DataFrame DataServer::makeQuery(string query)
 
 	MYSQL_RES *result = mysql_store_result(&server);
 	if (result == NULL) {
-		cout << "Query returns empty result\n";
-		cout << "\t=>" << query << endl;
+		//cout << "Query returns empty result\n";
+		//cout << "\t=>" << query << endl;
 		return DataFrame();
 	}
 
@@ -259,4 +389,172 @@ string DataFrame::getItem(int rowIndex, int columnIndex)
 bool Staff::operator==(const Staff & a)
 {
 	return (id == a.id) && (password == a.password) && (name == a.name) && (authority == a.authority);
+}
+
+vector<string> Date::getAllDatesInThisWeekAsStrings() {
+	Date temp = getFirstDateThisWeek();
+
+	vector<string> result;
+	for (int i = 0; i < 7; ++i) {
+		result.push_back(temp.toString());
+		temp.addDays(1);
+	}
+
+	return result;
+}
+
+void Date::addDays(int nDays) {
+	while (day + nDays > getNumDaysOfMonth(month)) {
+		nDays -= (getNumDaysOfMonth(month) - day);
+		day = 0;
+		month = (month + 1) % 12;
+		year = (month == 0) ? (year + 1) : year;
+	}
+	day += nDays;
+}
+
+void Date::subDays(int nDays) {
+	if (nDays > day) {
+		nDays -= day;
+		day = 0;
+		month = (month + 12 - 1) % 12;
+		year = (month == 11) ? year - 1 : year;
+
+		while (nDays > getNumDaysOfMonth(month)) {
+			nDays -= getNumDaysOfMonth(month);
+			month = (month + 12 - 1) % 12;
+			year = (month == 11) ? year - 1 : year;
+		}
+
+		day = getNumDaysOfMonth(month) - nDays;
+	}
+	else if (nDays < day) {
+		day -= nDays;
+	}
+	else {
+		month = (month + 12 - 1) % 12;
+		year = (month == 11) ? year - 1 : year;
+		day = getNumDaysOfMonth(month);
+	}
+}
+
+int Date::diffDays(Date target) {
+	int result = 0;
+	if (year > target.year) {
+		while (year != target.year) {
+			target.addDays(365);
+			result += 365;
+		}
+
+		if (month > target.month) {
+			while (month != target.month) {
+				target.addDays(27);
+				result += 27;
+			}
+
+			result += (day - target.day);
+		}
+		else if (month < target.month) {
+			while (month != target.month) {
+				target.subDays(27);
+				result -= 27;
+			}
+
+			result += (day - target.day);
+		}
+		else {
+			result += (day - target.day);
+		}
+	}
+	else if (year < target.year) {
+		while (year != target.year) {
+			target.subDays(365);
+			result -= 365;
+		}
+
+		if (month > target.month) {
+			while (month != target.month) {
+				target.addDays(27);
+				result += 27;
+			}
+
+			result += (day - target.day);
+		}
+		else if (month < target.month) {
+			while (month != target.month) {
+				target.subDays(27);
+				result -= 27;
+			}
+
+			result += (day - target.day);
+		}
+		else {
+			result += (day - target.day);
+		}
+	}
+	else {
+		if (month > target.month) {
+			while (month != target.month) {
+				target.addDays(27);
+				result += 27;
+			}
+
+			result += (day - target.day);
+		}
+		else if (month < target.month) {
+			while (month != target.month) {
+				target.subDays(27);
+				result -= 27;
+			}
+
+			result += (day - target.day);
+		}
+		else {
+			result += (day - target.day);
+		}
+	}
+
+	return result;
+}
+
+Date::Date(string s)
+{
+	for (int i = 0; i < s.length(); ++i)
+		if (s[i] == '/')
+			s[i] = ' ';
+	stringstream ss(s);
+	int y, m, d;
+	ss >> y >> m >> d;
+	year = y;
+	month = m-1;
+	day = d;
+}
+
+int Date::getWeekDay() {
+	Date origin(2016, 11, 20);
+	int diff = this->diffDays(origin);
+	if (diff < 0)
+		diff += (abs(diff) / 7 + 1) * 7;
+	return diff % 7;
+}
+
+string Date::toString() {
+	stringstream ss;
+	ss << year << "/"
+		<< month + 1 << "/"
+		<< day;
+	return ss.str();
+}
+
+Date Date::getFirstDateThisWeek()
+{
+	Date temp = *this;
+	temp.subDays(temp.getWeekDay());
+	return temp;
+}
+
+int Date::getNumDaysOfMonth(int target_month) {
+	const int numDaysOfMonths[12] = { 31, 28, 31, 30, 31, 30, 31,31,30,31,30,31 };
+	const int numDaysOfMonthsLeap[12] = { 31, 29, 31, 30, 31, 30, 31,31,30,31,30,31 };
+	return (year % 4 == 0) ? numDaysOfMonthsLeap[target_month] : numDaysOfMonths[target_month];
 }

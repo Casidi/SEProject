@@ -70,7 +70,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(SolutionDir)mysql\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Jeff\Desktop\SEProject\mysql;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)mysql;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(SolutionDir)mysql\include;$(IncludePath)</IncludePath>
@@ -137,4 +137,9 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="SEProject.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>
