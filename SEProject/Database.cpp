@@ -267,6 +267,9 @@ vector<Schedule> DataServer::getScheduleBase()
 vector<Schedule> DataServer::getDaySchedule(Date target)
 {
 	vector<Schedule> base = getScheduleBase();
+	for (int i = 0; i < base.size(); ++i)
+		base[i].date = target.toString();
+
 	Date firstDayInWeek = target;
 	firstDayInWeek.subDays(firstDayInWeek.getWeekDay());
 
@@ -283,7 +286,11 @@ vector<Schedule> DataServer::getDaySchedule(Date target)
 		}
 	}
 
-	//TODO: for each staff, check if there are applications for sick, leave, or ....
+	modifyScheduleBase(base, "compensatory");
+	modifyScheduleBase(base, "business");
+	modifyScheduleBase(base, "leave");
+	modifyScheduleBase(base, "sick");
+
 	return base;
 }
 
@@ -298,6 +305,23 @@ Staff DataServer::getStaffFromID(string staffID)
 	result.name = queryResult.getItem(0, 2);
 	result.authority = queryResult.getItem(0, 3);
 	return result;
+}
+
+void DataServer::modifyScheduleBase(vector<Schedule>& base, string targetStatus)
+{
+	for (int i = 0; i < base.size(); ++i) {
+		string query = formatQuery("SELECT * FROM schedule \
+						WHERE staff_id='%s' AND date='%s' \
+						AND is_approved='Y' AND status='%s';",
+			base[i].staffID.c_str(),
+			base[i].date.c_str(),
+			targetStatus.c_str());
+		DataFrame result = makeQuery(query);
+		if (result.isEmpty() == false) {
+			base[i].status = targetStatus;
+			base[i].reason = result.getItem(0, 3);
+		}
+	}
 }
 
 DataFrame DataServer::makeQuery(string query)

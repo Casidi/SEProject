@@ -1,6 +1,4 @@
-﻿//TODO: add method to DataServer to reset the database to the initial data
-
-#include "DialogProcs.h"
+﻿#include "DialogProcs.h"
 #include <windowsx.h>
 #include <CommCtrl.h>
 #include <iostream>
@@ -170,19 +168,17 @@ void BrowseWeekDialog_initListView(HWND hwndDialog) {
 	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
 
 	lvc.cx = 100;
-	lvc.pszText = TEXT("Name");
+	lvc.pszText = TEXT("Status");
 	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
 
-	lvc.pszText = TEXT("Status");
+	lvc.pszText = TEXT("Reason");
 	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
 }
 
 void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
 	char buffer[16];
-	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
-	cout << buffer << endl;
-	cout << ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)) << endl;
-
+	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), 
+		ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
 	vector<Schedule> scheduleThisDay = dataServer.getDaySchedule(Date(buffer));
 
 	LVITEM lvi;
@@ -198,10 +194,52 @@ void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
 		lvi.iItem = 0;
 		lvi.pszText = (LPSTR)scheduleThisDay[i].staffID.c_str();
 		ListView_InsertItem(hwndLVTarget, &lvi);
-		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)scheduleThisDay[i].staffID.c_str());
-		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)scheduleThisDay[i].status.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)scheduleThisDay[i].status.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)scheduleThisDay[i].reason.c_str());
 	}
+}
 
+void BrowseDayDialog_initListView(HWND hwndDialog) {
+	LVCOLUMN lvc;
+	HWND hwndLVTarget = GetDlgItem(hwndDialog, IDC_LIST1);
+	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+	ZeroMemory(&lvc, sizeof(LVCOLUMN));
+	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	lvc.cx = 100;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.pszText = TEXT("ID");
+	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("Status");
+	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
+
+	lvc.pszText = TEXT("Reason");
+	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
+
+	vector<Schedule> scheduleThisDay = dataServer.getDaySchedule(getToday());
+
+	LVITEM lvi;
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = 0;
+	lvi.iSubItem = 0;
+	lvi.cchTextMax = 256;
+
+	ListView_DeleteAllItems(hwndLVTarget);
+	for (int i = 0; i < scheduleThisDay.size(); ++i) {
+		lvi.iItem = 0;
+		lvi.pszText = (LPSTR)scheduleThisDay[i].staffID.c_str();
+		ListView_InsertItem(hwndLVTarget, &lvi);
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)scheduleThisDay[i].status.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)scheduleThisDay[i].reason.c_str());
+	}
+}
+
+void BrowseDayDialog_initStaticText(HWND hwndDialog) {
+	char buffer[32];
+	sprintf_s(buffer, "Today is: %s", getToday().toString().c_str());
+	SetDlgItemText(hwndDialog, IDC_STATIC1, buffer);
 }
 
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -309,7 +347,7 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), hwnd, (DLGPROC)BrowseWeekDialogProc);
 			break;
 		case IDC_BUTTON5:
-			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), hwnd, (DLGPROC)BrowsedayDialogProc);
+			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), hwnd, (DLGPROC)BrowseDayDialogProc);
 			break;
 		case IDC_BUTTON6:
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPROVE), hwnd, (DLGPROC)ApproveleaveDialogProc);
@@ -391,15 +429,18 @@ LRESULT CALLBACK BrowseWeekDialogProc(HWND hwnd, UINT message, WPARAM wParam, LP
 	return FALSE;
 }
 
-LRESULT CALLBACK BrowsedayDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK BrowseDayDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		BrowseDayDialog_initListView(hwnd);
+		BrowseDayDialog_initStaticText(hwnd);		
 		return true;
+
 	case WM_COMMAND:
 		switch (wParam)
 		{
-		case IDOK:
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;

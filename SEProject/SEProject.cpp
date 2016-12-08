@@ -17,8 +17,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 
 	//dataServer.resetDatabase();
 	//return 0;
-	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEWEEK), NULL, (DLGPROC)BrowseWeekDialogProc);
-	return 0;
+	//DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), NULL, (DLGPROC)BrowseDayDialogProc);
+	//return 0;
 	
 	if (dataServer.getIsConnected() == false) {
 		MessageBoxA(NULL, "Failed to connect to server", "Error", MB_OK | MB_ICONINFORMATION);

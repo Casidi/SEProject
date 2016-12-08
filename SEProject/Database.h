@@ -102,7 +102,9 @@ private:
 
 	string formatQuery(string format, ...);
 	DataFrame makeQuery(string query);
+
 	Staff getStaffFromID(string staffID);
+	void modifyScheduleBase(vector<Schedule>& base, string targetStatus);
 };
 
 
