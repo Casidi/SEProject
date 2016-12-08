@@ -379,7 +379,9 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		return true;
+		SetFocus(GetDlgItem(hwnd, IDC_USERNAME));
+		return FALSE;
+
 	case WM_COMMAND:
 		switch (wParam)
 		{
