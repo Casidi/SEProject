@@ -6,8 +6,8 @@ using namespace std;
 
 extern HINSTANCE hInst;
 extern DataServer dataServer;
+extern bool shouldExit;
 
-void moveToCenter(HWND target);
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK AuthorityDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);

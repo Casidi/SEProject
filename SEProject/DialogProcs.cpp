@@ -327,12 +327,23 @@ LRESULT CALLBACK SetpwDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	return FALSE;
 }
 
-//TODO: filter buttons according to the authority of current user
 LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
+		if (dataServer.getCurrentUser().authority == "supervisor") {
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON7), SW_HIDE);
+		}
+		else if (dataServer.getCurrentUser().authority == "labor") {
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON4), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON6), SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_BUTTON7), SW_HIDE);
+		}
 		return true;
 	case WM_COMMAND:
 		switch (wParam)
@@ -359,11 +370,14 @@ LRESULT CALLBACK MainDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPLY), hwnd, (DLGPROC)ApplyleaveDialogProc);
 			break;
 		case IDC_BUTTON9:
-			cout << "set password/name" << endl;
 			DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_SETPW), hwnd, (DLGPROC)SetpwDialogProc);
+			break;
+		case IDCANCEL2:
+			EndDialog(hwnd, 0);
 			break;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
+			shouldExit = true;
 			return TRUE;
 		}
 		break;
@@ -379,7 +393,9 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		return true;
+		SetFocus(GetDlgItem(hwnd, IDC_USERNAME));
+		return FALSE;
+
 	case WM_COMMAND:
 		switch (wParam)
 		{
