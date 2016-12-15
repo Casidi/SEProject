@@ -6,6 +6,7 @@ using namespace std;
 
 HINSTANCE hInst = NULL;
 DataServer dataServer;
+bool shouldExit = false;
 
 #ifdef _DEBUG
 int main()
@@ -15,21 +16,18 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 {
 	hInst = GetModuleHandle(NULL);
 
-	//dataServer.resetDatabase();
-	//return 0;
-	//DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_BROWSEDAY), NULL, (DLGPROC)BrowseDayDialogProc);
-	//return 0;
-	
 	if (dataServer.getIsConnected() == false) {
 		MessageBoxA(NULL, "Failed to connect to server", "Error", MB_OK | MB_ICONINFORMATION);
 		return 0;
 	}
 
-	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_LOGIN), NULL, (DLGPROC)LoginDialogProc);
-	if (dataServer.getIsLogined() == false)
-		return 0;
+	while (!shouldExit) {
+		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_LOGIN), NULL, (DLGPROC)LoginDialogProc);
+		if (dataServer.getIsLogined() == false)
+			return 0;
 
-	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_MAIN), NULL, (DLGPROC)MainDialogProc);
+		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_MAIN), NULL, (DLGPROC)MainDialogProc);
+	}
 
     return 0;
 }

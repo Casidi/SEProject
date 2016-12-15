@@ -67,6 +67,8 @@ public:
 	//reset all record in the database
 	void resetDatabase();
 
+	string getServerIPFromFile(string fileName);
+
 	bool login(string userID, string password);
 	bool getIsLogined();
 	bool getIsConnected();
@@ -81,6 +83,8 @@ public:
 	bool setStaffAuthority(string staffID, string staffAuthority);
 	bool setCurrentUserPassword(string staffPassword);
 	bool setCurrentUserName(string staffName);
+	Staff getCurrentUser();
+
 	vector<Staff> getAllStaff();
 	vector<Staff> getAllStaffExceptCurrentUser();
 	int getNumberOfLabor();

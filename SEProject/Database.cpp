@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <Windows.h>
 
@@ -13,8 +14,18 @@ const string DataServer::defaultStaffAuthority = "labor";
 
 DataServer::DataServer()
 {
+	string serverIP = getServerIPFromFile("config.txt");
+	if (serverIP == "") {
+		cout << "failed to read config.txt\n";
+		MessageBox(NULL, "please check if config.txt exists", "Error",
+			MB_OK);
+		isConnected = false;
+		isLogined = false;
+		return;
+	}
+
 	mysql_init(&server);
-	if (!mysql_real_connect(&server, "localhost", "root", 
+	if (!mysql_real_connect(&server, serverIP.c_str(), "root", 
 		"seproject12345678", NULL, 0, NULL, 0)) {
 		cout << "failed to connect to server\n";
 		isConnected = false;
@@ -47,6 +58,15 @@ void DataServer::resetDatabase()
 		sprintf_s(buffer, "A%03d", i);
 		addStaff(buffer);
 	}
+}
+
+string DataServer::getServerIPFromFile(string fileName)
+{
+	ifstream file(fileName.c_str(), ios::in);
+	string result;
+	file >> result;
+	file.close();
+	return result;
 }
 
 bool DataServer::login(string userID, string password)
@@ -199,6 +219,11 @@ bool DataServer::setCurrentUserName(string staffName)
 	makeQuery(query);
 
 	return true;
+}
+
+Staff DataServer::getCurrentUser()
+{
+	return currentUser;
 }
 
 vector<Staff> DataServer::getAllStaff()
