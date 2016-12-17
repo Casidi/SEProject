@@ -21,6 +21,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 		return 0;
 	}
 
+	DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPLY), NULL, (DLGPROC)ApplyleaveDialogProc);
+	return 0;
+
 	while (!shouldExit) {
 		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_LOGIN), NULL, (DLGPROC)LoginDialogProc);
 		if (dataServer.getIsLogined() == false)

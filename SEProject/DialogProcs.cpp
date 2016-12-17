@@ -242,6 +242,32 @@ void BrowseDayDialog_initStaticText(HWND hwndDialog) {
 	SetDlgItemText(hwndDialog, IDC_STATIC1, buffer);
 }
 
+void ApplyleaveDialog_handleApply(HWND hwndDialog)
+{
+	char textBuffer[32];
+	string leaveStatus, leaveReason;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
+	leaveReason = string(textBuffer);
+	ComboBox_GetText(GetDlgItem(hwndDialog, IDC_COMBO1), textBuffer, 32);
+	leaveStatus = string(textBuffer);
+
+	//month calendar
+	HWND hwndMC = GetDlgItem(hwndDialog, IDC_MONTHCALENDAR1);
+	SYSTEMTIME selday;
+	LPSYSTEMTIME lpSelday = &selday;
+	MonthCal_GetCurSel(hwndMC, lpSelday);
+	cout << "select date: " << selday.wYear << " " << selday.wMonth << " " << selday.wDay << endl;
+	Date seldate((int)lpSelday->wYear, (int)lpSelday->wMonth, (int)lpSelday->wDay);
+	SYSTEMTIME today;
+	LPSYSTEMTIME lpToday = &today;
+	MonthCal_GetToday(hwndMC, lpToday);
+	cout << "today: " << today.wYear << " " << today.wMonth << " " << today.wDay << endl;
+	Date todate((int)lpToday->wYear, (int)lpToday->wMonth, (int)lpToday->wDay);
+
+	dataServer.applyLeave(leaveStatus, leaveReason, seldate, todate);
+}
+
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
@@ -506,11 +532,18 @@ LRESULT CALLBACK ApplyleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LP
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "leave");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "sick");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "compensatory");
+		ComboBox_SelectString(GetDlgItem(hwnd, IDC_COMBO1), -1, "compensatory");
 		return true;
 	case WM_COMMAND:
 		switch (wParam)
 		{
 		case IDOK:
+			ApplyleaveDialog_handleApply(hwnd);
+			return TRUE;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;

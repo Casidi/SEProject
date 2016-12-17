@@ -17,7 +17,7 @@ DataServer::DataServer()
 	string serverIP = getServerIPFromFile("config.txt");
 	if (serverIP == "") {
 		cout << "failed to read config.txt\n";
-		MessageBox(NULL, "please check if config.txt exists", "Error",
+		MessageBoxA(NULL, "please check if config.txt exists", "Error",
 			MB_OK);
 		isConnected = false;
 		isLogined = false;
@@ -96,6 +96,46 @@ bool DataServer::getIsConnected()
 {
 	return isConnected;
 }
+
+bool DataServer::applyLeave(string status, string reason, Date seldate, Date today)
+{
+	if (status.compare("compensatory") == 0) {
+		if (reason.empty()) {
+			addSchedule(seldate.toString(), currentUser.id, "compensatory", "NULL", "N");
+			cout << "apply compensatory without reason." << endl;
+		}
+		else {
+			addSchedule(seldate.toString(), currentUser.id, "compensatory", reason, "N");
+			cout << "apply compensatory with reason." << endl;
+		}
+		return true;
+	}
+	else if (status.compare("leave") == 0) {
+		if (reason.empty()) {
+			cout << "error: apply leave must have a reason." << endl;
+			return false;
+		}
+		else {
+			addSchedule(seldate.toString(), currentUser.id, "leave", reason, "N");
+			cout << "apply leave with reason." << endl;
+		}
+		return true;
+	}
+	else if (status.compare("sick") == 0) {
+		if (reason.empty()) {
+			addSchedule(today.toString(), currentUser.id, "sick", "NULL", "Y");
+			cout << "apply sick without reason." << endl;
+		}
+		else {
+			addSchedule(today.toString(), currentUser.id, "sick", reason, "Y");
+			cout << "apply sick with reason." << endl;
+		}
+		return true;
+	}
+	cout << "error: status error." << endl;
+	return false;
+}
+
 
 bool DataServer::addSchedule(string date, string staffID, string status, string reason, string isApproved)
 {

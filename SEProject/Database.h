@@ -94,6 +94,8 @@ public:
 	vector<Schedule> getScheduleBase();
 	vector<Schedule> getDaySchedule(Date target);
 
+	bool applyLeave(string status, string reason, Date seldate, Date today);
+
 	static const string defaultStaffPassword;
 	static const string defaultStaffName;
 	static const string defaultStaffAuthority;
