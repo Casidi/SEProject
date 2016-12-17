@@ -60,6 +60,12 @@ void DataServer::resetDatabase()
 	}
 }
 
+bool DataServer::setLeave(string id, Date date)
+{
+	addSchedule(date.toString(), id, "business", "NULL", "Y");
+	return true;
+}
+
 string DataServer::getServerIPFromFile(string fileName)
 {
 	ifstream file(fileName.c_str(), ios::in);
@@ -84,6 +90,35 @@ bool DataServer::login(string userID, string password)
 
 	currentUser = getStaffFromID(userID);
 	isLogined = true;
+	return true;
+}
+
+vector<Leave> DataServer::getAllLeave()
+{
+	DataFrame dataFromQuery = makeQuery("SELECT date, b.id, name, status, reason FROM staff a, schedule b WHERE b.id = a.id AND b.status != early AND b.status != late AND b.approval = N ORDER BY date, b.id;");
+	vector<Leave> result;
+
+	Leave buffer;
+	for (int i = 0; i < dataFromQuery.getHeight(); ++i) {
+		buffer.date = dataFromQuery.getItem(i, 0);
+		buffer.staffID = dataFromQuery.getItem(i, 1);
+		buffer.name = dataFromQuery.getItem(i, 2);
+		buffer.status = dataFromQuery.getItem(i, 3);
+		buffer.reason = dataFromQuery.getItem(i, 4);
+		result.push_back(buffer);
+	}
+	return result;
+}
+
+bool DataServer::approveLeave(string date, string staffID, string status)
+{
+	string query = formatQuery(
+		"UPDATE schedule SET approval = 'Y' WHERE date = '%s' AND id = '%s' AND status = '%s';",
+		date.c_str(),
+		staffID.c_str(),
+		status.c_str()
+		);
+	makeQuery(query);
 	return true;
 }
 

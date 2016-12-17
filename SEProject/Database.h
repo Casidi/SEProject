@@ -5,6 +5,15 @@
 
 using namespace std;
 
+class Leave {
+public:
+	string date;
+	string staffID;
+	string name;
+	string status;
+	string reason;
+};
+
 class Date {
 public:
 	Date(int y, int m, int d) :year(y), month(m - 1), day(d) {}
@@ -95,6 +104,9 @@ public:
 	vector<Schedule> getDaySchedule(Date target);
 
 	bool applyLeave(string status, string reason, Date seldate, Date today);
+	bool approveLeave(string date, string staffID, string status);
+	vector<Leave> getAllLeave();
+	bool setLeave(string id, Date date);
 
 	static const string defaultStaffPassword;
 	static const string defaultStaffName;
