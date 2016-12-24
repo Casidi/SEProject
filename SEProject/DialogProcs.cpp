@@ -177,7 +177,7 @@ void BrowseWeekDialog_initListView(HWND hwndDialog) {
 
 void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
 	char buffer[16];
-	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), 
+	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1),
 		ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
 	vector<Schedule> scheduleThisDay = dataServer.getDaySchedule(Date(buffer));
 
@@ -333,8 +333,10 @@ void ApproveleaveDialog_handleApprove(HWND hwndDialog)
 	char textBuffer[32];
 	char textID[32];
 	char textStatus[32];
+	char textReason[32];
 	LPTSTR pID = textID;
 	LPTSTR pStatus = textStatus;
+	LPTSTR pReason = textReason;
 
 	ZeroMemory(&lvi, sizeof(LVITEM));
 	lvi.mask = LVIF_TEXT;
@@ -347,7 +349,8 @@ void ApproveleaveDialog_handleApprove(HWND hwndDialog)
 		ListView_GetItem(hwndLV, &lvi);
 		ListView_GetItemText(hwndLV, lvi.iItem, 1, pID, 32); //get staffID
 		ListView_GetItemText(hwndLV, lvi.iItem, 3, pStatus, 32); //get status
-		dataServer.approveLeave(string(lvi.pszText), string(pID), string(pStatus));
+		ListView_GetItemText(hwndLV, lvi.iItem, 4, pReason, 32); //get reason
+		dataServer.approveLeave(string(lvi.pszText), string(pID), string(pStatus), string(pReason));
 		ListView_DeleteItem(hwndLV, selectedIndex);
 		--selectedIndex;
 		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
@@ -400,6 +403,12 @@ void SetleaveDialog_initListView(HWND hwndLVTarget)
 
 void SetleaveDialog_handleSetLeave(HWND hwndDialog)
 {
+	char reasonBuffer[32];
+	string reason;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), reasonBuffer, 32);
+	reason = string(reasonBuffer);
+
 	//month calendar
 	HWND hwndMC = GetDlgItem(hwndDialog, IDC_MONTHCALENDAR1);
 	SYSTEMTIME selday;
@@ -422,7 +431,7 @@ void SetleaveDialog_handleSetLeave(HWND hwndDialog)
 	while (selectedIndex != -1) {
 		lvi.iItem = selectedIndex;
 		ListView_GetItem(hwndLV, &lvi);
-		dataServer.setLeave(string(lvi.pszText), seldate);
+		dataServer.setLeave(string(lvi.pszText), seldate, reason);
 		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
 	}
 	SetleaveDialog_updateListViewFromServer(hwndLV);
@@ -433,7 +442,7 @@ LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));	
+		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
@@ -638,7 +647,7 @@ LRESULT CALLBACK BrowseDayDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
 		BrowseDayDialog_initListView(hwnd);
-		BrowseDayDialog_initStaticText(hwnd);		
+		BrowseDayDialog_initStaticText(hwnd);
 		return true;
 
 	case WM_COMMAND:

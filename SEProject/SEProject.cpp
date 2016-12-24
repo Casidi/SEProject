@@ -21,13 +21,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 		return 0;
 	}
 
-	//DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPLY), NULL, (DLGPROC)ApplyleaveDialogProc);
-	//return 0;
-	//DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_APPROVE), NULL, (DLGPROC)ApproveleaveDialogProc);
-	//return 0;
-	//DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_SETLEAVE), NULL, (DLGPROC)SetleaveDialogProc);
-	//return 0;
-
 	while (!shouldExit) {
 		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_LOGIN), NULL, (DLGPROC)LoginDialogProc);
 		if (dataServer.getIsLogined() == false)
@@ -38,6 +31,5 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_MAIN), NULL, (DLGPROC)MainDialogProc);
 	}
 
-    return 0;
+	return 0;
 }
-

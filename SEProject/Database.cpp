@@ -25,19 +25,20 @@ DataServer::DataServer()
 	}
 
 	mysql_init(&server);
-	if (!mysql_real_connect(&server, serverIP.c_str(), "root", 
+	if (!mysql_real_connect(&server, serverIP.c_str(), "root",
 		"seproject12345678", NULL, 0, NULL, 0)) {
 		cout << "failed to connect to server\n";
 		isConnected = false;
 		isLogined = false;
 		return;
-	} else {
+	}
+	else {
 		cout << "Connection succeeded" << endl;
 		makeQuery("USE se_project;");
 
 		isConnected = true;
 		isLogined = false;
-	}	
+	}
 }
 
 DataServer::~DataServer()
@@ -60,9 +61,28 @@ void DataServer::resetDatabase()
 	}
 }
 
-bool DataServer::setLeave(string id, Date date)
+bool DataServer::setLeave(string id, Date date, string reason)
 {
-	addSchedule(date.toString(), id, "business", "NULL", "Y");
+	if (id.empty()) {
+		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
+			MB_OK);
+		return false;
+	}
+
+	if (reason.empty()) {
+		cout << "error: set leave must have a reason." << endl;
+		MessageBoxA(NULL, "Error: the leave must be set with reason.", "Error",
+			MB_OK);
+		return false;
+	}
+
+	if ((checkLeave("business", reason, date.toString(), id)) == true) {
+		MessageBoxA(NULL, "Error: the business is already set again.", "Error",
+			MB_OK);
+		return false;
+	}
+	addSchedule(date.toString(), id, "business", reason, "Y");
+	MessageBoxA(NULL, "Success: set business with reason.", "Success", MB_OK);
 	return true;
 }
 
@@ -95,8 +115,16 @@ bool DataServer::login(string userID, string password)
 
 vector<Leave> DataServer::getAllLeave()
 {
-	DataFrame dataFromQuery = makeQuery("SELECT date, b.id, name, status, reason FROM staff a, schedule b WHERE b.id = a.id AND b.status != early AND b.status != late AND b.approval = N ORDER BY date, b.id;");
+	DataFrame dataFromQuery;
 	vector<Leave> result;
+	if (currentUser.authority.compare("chief") == 0)
+		dataFromQuery = makeQuery("SELECT date, a.id, name, status, reason FROM staff a, schedule b WHERE b.staff_id = a.id AND b.status != 'early' AND b.status != 'late' AND b.is_approved = 'N' ORDER BY date, a.id;");
+	else if (currentUser.authority.compare("supervisor") == 0)
+		dataFromQuery = makeQuery("SELECT date, a.id, name, status, reason FROM staff a, schedule b WHERE b.staff_id = a.id AND a.authority != 'chief' AND b.status != 'early' AND b.status != 'late' AND b.is_approved = 'N' ORDER BY date, a.id;");
+	else {
+		cout << "error: authority is error" << endl;
+		return result;
+	}
 
 	Leave buffer;
 	for (int i = 0; i < dataFromQuery.getHeight(); ++i) {
@@ -110,15 +138,35 @@ vector<Leave> DataServer::getAllLeave()
 	return result;
 }
 
-bool DataServer::approveLeave(string date, string staffID, string status)
+bool DataServer::approveLeave(string date, string staffID, string status, string reason)
 {
-	string query = formatQuery(
-		"UPDATE schedule SET approval = 'Y' WHERE date = '%s' AND id = '%s' AND status = '%s';",
+	if (staffID.empty()) {
+		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
+			MB_OK);
+		return false;
+	}
+
+	if (status.empty()) {
+		MessageBoxA(NULL, "Error: the status is empty.", "Error",
+			MB_OK);
+		return false;
+	}
+
+	string query1 = formatQuery(
+		"UPDATE schedule SET is_approved = 'Y' WHERE date = '%s' AND staff_id = '%s' AND status = '%s';",
 		date.c_str(),
 		staffID.c_str(),
 		status.c_str()
 		);
-	makeQuery(query);
+	makeQuery(query1);
+	string query2 = formatQuery(
+		"DELETE FROM schedule WHERE date = '%s' AND staff_id = '%s' AND status = '%s' AND reason != '%s';",
+		date.c_str(),
+		staffID.c_str(),
+		status.c_str(),
+		reason.c_str()
+		);
+	makeQuery(query2);
 	return true;
 }
 
@@ -132,45 +180,94 @@ bool DataServer::getIsConnected()
 	return isConnected;
 }
 
+bool DataServer::checkLeave(string status, string reason, string date, string id) {
+	string query = formatQuery(
+		"SELECT * FROM schedule WHERE date = '%s' AND staff_id = '%s' AND status = '%s' AND reason = '%s';",
+		date.c_str(),
+		id.c_str(),
+		status.c_str(),
+		reason.c_str()
+		);
+	DataFrame result = makeQuery(query);
+	if ((result.isEmpty()) == true) {
+		cout << "empty" << endl;
+		return false;
+	}
+	else return true;
+}
+
 bool DataServer::applyLeave(string status, string reason, Date seldate, Date today)
 {
 	if (status.compare("compensatory") == 0) {
 		if (reason.empty()) {
+			if ((checkLeave(status, "NULL", seldate.toString(), currentUser.id)) == true) {
+				MessageBoxA(NULL, "Error: the compensatory is already applied again.", "Error",
+					MB_OK);
+				return false;
+			}
 			addSchedule(seldate.toString(), currentUser.id, "compensatory", "NULL", "N");
 			cout << "apply compensatory without reason." << endl;
+			MessageBoxA(NULL, "Success: apply compensatory without reason.", "Success", MB_OK);
 		}
 		else {
+			if ((checkLeave(status, reason, seldate.toString(), currentUser.id)) == true) {
+				MessageBoxA(NULL, "Error: the compensatory is already applied again.", "Error",
+					MB_OK);
+				return false;
+			}
 			addSchedule(seldate.toString(), currentUser.id, "compensatory", reason, "N");
 			cout << "apply compensatory with reason." << endl;
+			MessageBoxA(NULL, "Success: apply compensatory with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	else if (status.compare("leave") == 0) {
 		if (reason.empty()) {
 			cout << "error: apply leave must have a reason." << endl;
+			MessageBoxA(NULL, "Error: the leave must be applied with reason.", "Error",
+				MB_OK);
 			return false;
 		}
 		else {
+			if ((checkLeave(status, reason, seldate.toString(), currentUser.id)) == true) {
+				MessageBoxA(NULL, "Error: the leave is already applied again.", "Error",
+					MB_OK);
+				return false;
+			}
 			addSchedule(seldate.toString(), currentUser.id, "leave", reason, "N");
 			cout << "apply leave with reason." << endl;
+			MessageBoxA(NULL, "Success: apply leave with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	else if (status.compare("sick") == 0) {
 		if (reason.empty()) {
+			if ((checkLeave(status, "NULL", today.toString(), currentUser.id)) == true) {
+				MessageBoxA(NULL, "Error: the sick is already applied again.", "Error",
+					MB_OK);
+				return false;
+			}
 			addSchedule(today.toString(), currentUser.id, "sick", "NULL", "Y");
 			cout << "apply sick without reason." << endl;
+			MessageBoxA(NULL, "Success: apply sick without reason.", "Success", MB_OK);
 		}
 		else {
+			if ((checkLeave(status, reason, today.toString(), currentUser.id)) == true) {
+				MessageBoxA(NULL, "Error: the sick is already applied again.", "Error",
+					MB_OK);
+				return false;
+			}
 			addSchedule(today.toString(), currentUser.id, "sick", reason, "Y");
 			cout << "apply sick with reason." << endl;
+			MessageBoxA(NULL, "Success: apply sick with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	cout << "error: status error." << endl;
+	MessageBoxA(NULL, "the status is not set.", "Error",
+		MB_OK);
 	return false;
 }
-
 
 bool DataServer::addSchedule(string date, string staffID, string status, string reason, string isApproved)
 {
@@ -201,7 +298,7 @@ bool DataServer::addStaff(string staffID,
 		return false;
 
 	string query = formatQuery("SELECT * FROM staff WHERE id = '%s';", staffID.c_str());
-	
+
 	DataFrame result = makeQuery(query);
 	if (result.isEmpty()) {
 		query = formatQuery(
@@ -250,8 +347,17 @@ bool DataServer::deleteStaff(string staffID) {
 
 bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 {
-	if (staffID.empty() || staffAuthority.empty())
+	if (staffID.empty()) {
+		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
+			MB_OK);
 		return false;
+	}
+
+	if (staffAuthority.empty()) {
+		MessageBoxA(NULL, "Error: the Authority is empty.", "Error",
+			MB_OK);
+		return false;
+	}
 
 	string query = formatQuery(
 		"UPDATE staff SET authority = '%s' WHERE id = '%s';",
@@ -259,13 +365,17 @@ bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 		staffID.c_str()
 		);
 	makeQuery(query);
+	MessageBoxA(NULL, "Success: set authority success.", "Success", MB_OK);
 	return true;
 }
 
 bool DataServer::setCurrentUserPassword(string staffPassword)
 {
-	if (staffPassword.empty())
+	if (staffPassword.empty()) {
+		MessageBoxA(NULL, "Error: the password is empty.", "Error",
+			MB_OK);
 		return false;
+	}
 
 	currentUser.password = staffPassword;
 
@@ -275,14 +385,17 @@ bool DataServer::setCurrentUserPassword(string staffPassword)
 		currentUser.id.c_str()
 		);
 	makeQuery(query);
-
+	MessageBoxA(NULL, "Success: set password success.", "Success", MB_OK);
 	return true;
 }
 
 bool DataServer::setCurrentUserName(string staffName)
 {
-	if (staffName.empty())
+	if (staffName.empty()) {
+		MessageBoxA(NULL, "Error: the username is empty.", "Error",
+			MB_OK);
 		return false;
+	}
 
 	currentUser.name = staffName;
 
@@ -292,7 +405,7 @@ bool DataServer::setCurrentUserName(string staffName)
 		currentUser.id.c_str()
 		);
 	makeQuery(query);
-
+	MessageBoxA(NULL, "Success: set username success.", "Success", MB_OK);
 	return true;
 }
 
@@ -375,7 +488,7 @@ vector<Schedule> DataServer::getDaySchedule(Date target)
 
 	int diff = firstDayInWeek.diffDays(Date(2016, 11, 13));
 	diff /= 7;
-	if(diff%2 == 1) {
+	if (diff % 2 == 1) {
 		for (int i = 0; i < base.size(); ++i) {
 			if (getStaffPositionFromID(base[i].staffID) != "chief") {
 				if (base[i].status == "early")
@@ -386,9 +499,9 @@ vector<Schedule> DataServer::getDaySchedule(Date target)
 		}
 	}
 
+	modifyScheduleBase(base, "leave");
 	modifyScheduleBase(base, "compensatory");
 	modifyScheduleBase(base, "business");
-	modifyScheduleBase(base, "leave");
 	modifyScheduleBase(base, "sick");
 
 	return base;
@@ -459,7 +572,7 @@ DataFrame::DataFrame(MYSQL_RES* result)
 	for (int i = 0; i < nRows; ++i) {
 		MYSQL_ROW row = mysql_fetch_row(result);
 		for (int j = 0; j < nColumns; ++j) {
-			data[i][j] = row[j]? row[j]: "NULL";
+			data[i][j] = row[j] ? row[j] : "NULL";
 		}
 	}
 }
@@ -471,7 +584,7 @@ bool DataFrame::isEmpty()
 
 int DataFrame::getWidth()
 {
-	return (data.size() == 0)? 0: data[0].size();
+	return (data.size() == 0) ? 0 : data[0].size();
 }
 
 int DataFrame::getHeight()
@@ -481,7 +594,7 @@ int DataFrame::getHeight()
 
 string DataFrame::getItem(int rowIndex, int columnIndex)
 {
-	if (rowIndex > getHeight()-1 || columnIndex > getWidth()-1 || isEmpty() == true)
+	if (rowIndex > getHeight() - 1 || columnIndex > getWidth() - 1 || isEmpty() == true)
 		return string("");
 	return data[rowIndex][columnIndex];
 }

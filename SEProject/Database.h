@@ -61,11 +61,12 @@ public:
 	bool getIsConnected();
 
 	bool addSchedule(string date, string staffID, string status, string reason, string isApproved);
-	
-	bool addStaff(string staffID, 
-		string staffPassword=defaultStaffPassword,
-		string staffName=defaultStaffName,
-		string staffAuthority=defaultStaffAuthority);
+	bool DataServer::checkLeave(string status, string reason, string date, string id);
+
+	bool addStaff(string staffID,
+		string staffPassword = defaultStaffPassword,
+		string staffName = defaultStaffName,
+		string staffAuthority = defaultStaffAuthority);
 	bool deleteStaff(string staffID);
 	bool setStaffAuthority(string staffID, string staffAuthority);
 	bool setCurrentUserPassword(string staffPassword);
@@ -82,9 +83,9 @@ public:
 	vector<Schedule> getDaySchedule(Date target);
 
 	bool applyLeave(string status, string reason, Date seldate, Date today);
-	bool approveLeave(string date, string staffID, string status);
+	bool approveLeave(string date, string staffID, string status, string reason);
 	vector<Leave> getAllLeave();
-	bool setLeave(string id, Date date);
+	bool setLeave(string id, Date date, string reason);
 
 	static const string defaultStaffPassword;
 	static const string defaultStaffName;
@@ -102,5 +103,4 @@ private:
 	Staff getStaffFromID(string staffID);
 	void modifyScheduleBase(vector<Schedule>& base, string targetStatus);
 };
-
 
