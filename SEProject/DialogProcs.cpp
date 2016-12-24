@@ -177,7 +177,7 @@ void BrowseWeekDialog_initListView(HWND hwndDialog) {
 
 void BrowseWeekDialog_handleDateSelected(HWND hwndDialog) {
 	char buffer[16];
-	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1), 
+	ComboBox_GetLBText(GetDlgItem(hwndDialog, IDC_COMBO1),
 		ComboBox_GetCurSel(GetDlgItem(hwndDialog, IDC_COMBO1)), buffer);
 	vector<Schedule> scheduleThisDay = dataServer.getDaySchedule(Date(buffer));
 
@@ -242,12 +242,207 @@ void BrowseDayDialog_initStaticText(HWND hwndDialog) {
 	SetDlgItemText(hwndDialog, IDC_STATIC1, buffer);
 }
 
+void ApplyleaveDialog_handleApply(HWND hwndDialog)
+{
+	char textBuffer[32];
+	string leaveStatus, leaveReason;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
+	leaveReason = string(textBuffer);
+	ComboBox_GetText(GetDlgItem(hwndDialog, IDC_COMBO1), textBuffer, 32);
+	leaveStatus = string(textBuffer);
+
+	//month calendar
+	HWND hwndMC = GetDlgItem(hwndDialog, IDC_MONTHCALENDAR1);
+	SYSTEMTIME selday;
+	LPSYSTEMTIME lpSelday = &selday;
+	MonthCal_GetCurSel(hwndMC, lpSelday);
+	cout << "select date: " << selday.wYear << " " << selday.wMonth << " " << selday.wDay << endl;
+	Date seldate((int)lpSelday->wYear, (int)lpSelday->wMonth, (int)lpSelday->wDay);
+	SYSTEMTIME today;
+	LPSYSTEMTIME lpToday = &today;
+	MonthCal_GetToday(hwndMC, lpToday);
+	cout << "today: " << today.wYear << " " << today.wMonth << " " << today.wDay << endl;
+	Date todate((int)lpToday->wYear, (int)lpToday->wMonth, (int)lpToday->wDay);
+
+	dataServer.applyLeave(leaveStatus, leaveReason, seldate, todate);
+}
+
+void ApproveleaveDialog_updateListViewFromData(HWND hwndLVTarget, const vector<Leave>& dataToSet)
+{
+	LVITEM lvi;
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = 0;
+	lvi.iSubItem = 0;
+	lvi.cchTextMax = 256;
+
+	ListView_DeleteAllItems(hwndLVTarget);
+	for (int i = 0; i < dataToSet.size(); ++i) {
+		lvi.iItem = 0;
+		lvi.pszText = (LPSTR)dataToSet[i].date.c_str();
+		ListView_InsertItem(hwndLVTarget, &lvi);
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)dataToSet[i].staffID.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 2, (LPSTR)dataToSet[i].name.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 3, (LPSTR)dataToSet[i].status.c_str());
+		ListView_SetItemText(hwndLVTarget, 0, 4, (LPSTR)dataToSet[i].reason.c_str());
+	}
+}
+
+void ApproveleaveDialog_updateListViewFromServer(HWND hwndLVTarget)
+{
+	vector<Leave> temp;
+	temp = dataServer.getAllLeave();
+	ApproveleaveDialog_updateListViewFromData(hwndLVTarget, temp);
+}
+
+void ApproveleaveDialog_initListView(HWND hwndLVTarget)
+{
+	LVCOLUMN lvc;
+
+	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+	ZeroMemory(&lvc, sizeof(LVCOLUMN));
+	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	lvc.cx = 100;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.pszText = TEXT("Date");
+	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("ID");
+	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("Name");
+	ListView_InsertColumn(hwndLVTarget, 2, &lvc);
+
+	lvc.cx = 100;
+	lvc.pszText = TEXT("Status");
+	ListView_InsertColumn(hwndLVTarget, 3, &lvc);
+
+	lvc.pszText = TEXT("Reason");
+	ListView_InsertColumn(hwndLVTarget, 4, &lvc);
+
+	ApproveleaveDialog_updateListViewFromServer(hwndLVTarget);
+}
+
+void ApproveleaveDialog_handleApprove(HWND hwndDialog)
+{
+	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
+	LVITEM lvi;
+	char textBuffer[32];
+	char textID[32];
+	char textStatus[32];
+	char textReason[32];
+	LPTSTR pID = textID;
+	LPTSTR pStatus = textStatus;
+	LPTSTR pReason = textReason;
+
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.pszText = textBuffer;
+	lvi.cchTextMax = 32;
+
+	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
+	while (selectedIndex != -1) {
+		lvi.iItem = selectedIndex;
+		ListView_GetItem(hwndLV, &lvi);
+		ListView_GetItemText(hwndLV, lvi.iItem, 1, pID, 32); //get staffID
+		ListView_GetItemText(hwndLV, lvi.iItem, 3, pStatus, 32); //get status
+		ListView_GetItemText(hwndLV, lvi.iItem, 4, pReason, 32); //get reason
+		dataServer.approveLeave(string(lvi.pszText), string(pID), string(pStatus), string(pReason));
+		ListView_DeleteItem(hwndLV, selectedIndex);
+		--selectedIndex;
+		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	}
+	ApproveleaveDialog_updateListViewFromServer(hwndLV);
+}
+
+void SetleaveDialog_updateListViewFromData(HWND hwndLVTarget, const vector<Staff>& dataToSet)
+{
+	LVITEM lvi;
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = 0;
+	lvi.iSubItem = 0;
+	lvi.cchTextMax = 256;
+
+	ListView_DeleteAllItems(hwndLVTarget);
+	for (int i = 0; i < dataToSet.size(); ++i) {
+		lvi.iItem = 0;
+		lvi.pszText = (LPSTR)dataToSet[i].id.c_str();
+		ListView_InsertItem(hwndLVTarget, &lvi);
+		ListView_SetItemText(hwndLVTarget, 0, 1, (LPSTR)dataToSet[i].name.c_str());
+	}
+}
+
+void SetleaveDialog_updateListViewFromServer(HWND hwndLVTarget)
+{
+	vector<Staff> temp;
+	temp = dataServer.getAllStaff();
+	SetleaveDialog_updateListViewFromData(hwndLVTarget, temp);
+}
+
+void SetleaveDialog_initListView(HWND hwndLVTarget)
+{
+	LVCOLUMN lvc;
+
+	SendMessage(hwndLVTarget, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+	ZeroMemory(&lvc, sizeof(LVCOLUMN));
+	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	lvc.cx = 100;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.pszText = TEXT("ID");
+	ListView_InsertColumn(hwndLVTarget, 0, &lvc);
+
+	lvc.pszText = TEXT("Name");
+	ListView_InsertColumn(hwndLVTarget, 1, &lvc);
+
+	SetleaveDialog_updateListViewFromServer(hwndLVTarget);
+}
+
+void SetleaveDialog_handleSetLeave(HWND hwndDialog)
+{
+	char reasonBuffer[32];
+	string reason;
+
+	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), reasonBuffer, 32);
+	reason = string(reasonBuffer);
+
+	//month calendar
+	HWND hwndMC = GetDlgItem(hwndDialog, IDC_MONTHCALENDAR1);
+	SYSTEMTIME selday;
+	LPSYSTEMTIME lpSelday = &selday;
+	MonthCal_GetCurSel(hwndMC, lpSelday);
+	cout << "select date: " << selday.wYear << " " << selday.wMonth << " " << selday.wDay << endl;
+	Date seldate((int)lpSelday->wYear, (int)lpSelday->wMonth, (int)lpSelday->wDay);
+
+	//list view
+	HWND hwndLV = GetDlgItem(hwndDialog, IDC_LIST1);
+	LVITEM lvi;
+	char textBuffer[32];
+
+	ZeroMemory(&lvi, sizeof(LVITEM));
+	lvi.mask = LVIF_TEXT;
+	lvi.pszText = textBuffer;
+	lvi.cchTextMax = 32;
+
+	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
+	while (selectedIndex != -1) {
+		lvi.iItem = selectedIndex;
+		ListView_GetItem(hwndLV, &lvi);
+		dataServer.setLeave(string(lvi.pszText), seldate, reason);
+		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	}
+	SetleaveDialog_updateListViewFromServer(hwndLV);
+}
+
 LRESULT CALLBACK AccountDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
-		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));	
+		AccountDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "chief");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "supervisor");
 		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "labor");
@@ -408,6 +603,7 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			return TRUE;
 
 		case IDCANCEL:
+			shouldExit = true;
 			EndDialog(hwnd, 0);
 			return TRUE;
 		}
@@ -451,7 +647,7 @@ LRESULT CALLBACK BrowseDayDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	case WM_INITDIALOG:
 		moveToCenter(hwnd);
 		BrowseDayDialog_initListView(hwnd);
-		BrowseDayDialog_initStaticText(hwnd);		
+		BrowseDayDialog_initStaticText(hwnd);
 		return true;
 
 	case WM_COMMAND:
@@ -470,11 +666,15 @@ LRESULT CALLBACK ApproveleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, 
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		ApproveleaveDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));
 		return true;
 	case WM_COMMAND:
 		switch (wParam)
 		{
 		case IDOK:
+			ApproveleaveDialog_handleApprove(hwnd);
+			return TRUE;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
@@ -488,11 +688,15 @@ LRESULT CALLBACK SetleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPAR
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		SetleaveDialog_initListView(GetDlgItem(hwnd, IDC_LIST1));
 		return true;
 	case WM_COMMAND:
 		switch (wParam)
 		{
 		case IDOK:
+			SetleaveDialog_handleSetLeave(hwnd);
+			return TRUE;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;
@@ -506,11 +710,18 @@ LRESULT CALLBACK ApplyleaveDialogProc(HWND hwnd, UINT message, WPARAM wParam, LP
 {
 	switch (message) {
 	case WM_INITDIALOG:
+		moveToCenter(hwnd);
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "leave");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "sick");
+		ComboBox_AddString(GetDlgItem(hwnd, IDC_COMBO1), "compensatory");
+		ComboBox_SelectString(GetDlgItem(hwnd, IDC_COMBO1), -1, "compensatory");
 		return true;
 	case WM_COMMAND:
 		switch (wParam)
 		{
 		case IDOK:
+			ApplyleaveDialog_handleApply(hwnd);
+			return TRUE;
 		case IDCANCEL:
 			EndDialog(hwnd, 0);
 			return TRUE;

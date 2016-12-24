@@ -25,10 +25,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdline
 		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_LOGIN), NULL, (DLGPROC)LoginDialogProc);
 		if (dataServer.getIsLogined() == false)
 			return 0;
+		if (shouldExit)
+			break;
 
 		DialogBoxA(hInst, MAKEINTRESOURCEA(IDD_MAIN), NULL, (DLGPROC)MainDialogProc);
 	}
 
-    return 0;
+	return 0;
 }
-

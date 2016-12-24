@@ -1,31 +1,18 @@
 ﻿#pragma once
 #include "mysql.h"
+#include "Date.h"
 #include <string>
 #include <vector>
 
 using namespace std;
 
-class Date {
+class Leave {
 public:
-	Date(int y, int m, int d) :year(y), month(m - 1), day(d) {}
-	Date(string s);
-	int getYear() { return year; }
-	int getMonth() { return month + 1; }
-	int getDay() { return day; }
-	int getWeekDay();
-
-	string toString();
-	Date getFirstDateThisWeek();
-	vector<string> getAllDatesInThisWeekAsStrings();
-
-	void addDays(int nDays);
-	void subDays(int nDays);
-	int diffDays(Date target);
-private:
-	int getNumDaysOfMonth(int target_month);
-
-	//NOTE: month starts from zero
-	int year, month, day;
+	string date;
+	string staffID;
+	string name;
+	string status;
+	string reason;
 };
 
 class Staff {
@@ -74,11 +61,12 @@ public:
 	bool getIsConnected();
 
 	bool addSchedule(string date, string staffID, string status, string reason, string isApproved);
-	
-	bool addStaff(string staffID, 
-		string staffPassword=defaultStaffPassword,
-		string staffName=defaultStaffName,
-		string staffAuthority=defaultStaffAuthority);
+	bool DataServer::checkLeave(string status, string reason, string date, string id);
+
+	bool addStaff(string staffID,
+		string staffPassword = defaultStaffPassword,
+		string staffName = defaultStaffName,
+		string staffAuthority = defaultStaffAuthority);
 	bool deleteStaff(string staffID);
 	bool setStaffAuthority(string staffID, string staffAuthority);
 	bool setCurrentUserPassword(string staffPassword);
@@ -93,6 +81,11 @@ public:
 
 	vector<Schedule> getScheduleBase();
 	vector<Schedule> getDaySchedule(Date target);
+
+	bool applyLeave(string status, string reason, Date seldate, Date today);
+	bool approveLeave(string date, string staffID, string status, string reason);
+	vector<Leave> getAllLeave();
+	bool setLeave(string id, Date date, string reason);
 
 	static const string defaultStaffPassword;
 	static const string defaultStaffName;
@@ -110,5 +103,4 @@ private:
 	Staff getStaffFromID(string staffID);
 	void modifyScheduleBase(vector<Schedule>& base, string targetStatus);
 };
-
 

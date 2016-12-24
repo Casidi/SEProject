@@ -123,11 +123,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Database.cpp" />
+    <ClCompile Include="Date.cpp" />
     <ClCompile Include="DialogProcs.cpp" />
     <ClCompile Include="SEProject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h" />
+    <ClInclude Include="Date.h" />
     <ClInclude Include="DialogProcs.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

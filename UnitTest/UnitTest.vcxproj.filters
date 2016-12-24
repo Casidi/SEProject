@@ -26,5 +26,8 @@
     <ClCompile Include="..\SEProject\Database.cpp">
       <Filter>原始程式檔</Filter>
     </ClCompile>
+    <ClCompile Include="..\SEProject\Date.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
