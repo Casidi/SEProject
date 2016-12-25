@@ -17,8 +17,6 @@ DataServer::DataServer()
 	string serverIP = getServerIPFromFile("config.txt");
 	if (serverIP == "") {
 		cout << "failed to read config.txt\n";
-		MessageBoxA(NULL, "please check if config.txt exists", "Error",
-			MB_OK);
 		isConnected = false;
 		isLogined = false;
 		return;
@@ -64,25 +62,18 @@ void DataServer::resetDatabase()
 bool DataServer::setLeave(string id, Date date, string reason)
 {
 	if (id.empty()) {
-		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
 	if (reason.empty()) {
 		cout << "error: set leave must have a reason." << endl;
-		MessageBoxA(NULL, "Error: the leave must be set with reason.", "Error",
-			MB_OK);
 		return false;
 	}
 
 	if ((checkLeave("business", reason, date.toString(), id)) == true) {
-		MessageBoxA(NULL, "Error: the business is already set again.", "Error",
-			MB_OK);
 		return false;
 	}
 	addSchedule(date.toString(), id, "business", reason, "Y");
-	MessageBoxA(NULL, "Success: set business with reason.", "Success", MB_OK);
 	return true;
 }
 
@@ -141,14 +132,10 @@ vector<Leave> DataServer::getAllLeave()
 bool DataServer::approveLeave(string date, string staffID, string status, string reason)
 {
 	if (staffID.empty()) {
-		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
 	if (status.empty()) {
-		MessageBoxA(NULL, "Error: the status is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
@@ -201,71 +188,52 @@ bool DataServer::applyLeave(string status, string reason, Date seldate, Date tod
 	if (status.compare("compensatory") == 0) {
 		if (reason.empty()) {
 			if ((checkLeave(status, "NULL", seldate.toString(), currentUser.id)) == true) {
-				MessageBoxA(NULL, "Error: the compensatory is already applied again.", "Error",
-					MB_OK);
 				return false;
 			}
 			addSchedule(seldate.toString(), currentUser.id, "compensatory", "NULL", "N");
 			cout << "apply compensatory without reason." << endl;
-			MessageBoxA(NULL, "Success: apply compensatory without reason.", "Success", MB_OK);
 		}
 		else {
 			if ((checkLeave(status, reason, seldate.toString(), currentUser.id)) == true) {
-				MessageBoxA(NULL, "Error: the compensatory is already applied again.", "Error",
-					MB_OK);
 				return false;
 			}
 			addSchedule(seldate.toString(), currentUser.id, "compensatory", reason, "N");
 			cout << "apply compensatory with reason." << endl;
-			MessageBoxA(NULL, "Success: apply compensatory with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	else if (status.compare("leave") == 0) {
 		if (reason.empty()) {
 			cout << "error: apply leave must have a reason." << endl;
-			MessageBoxA(NULL, "Error: the leave must be applied with reason.", "Error",
-				MB_OK);
 			return false;
 		}
 		else {
 			if ((checkLeave(status, reason, seldate.toString(), currentUser.id)) == true) {
-				MessageBoxA(NULL, "Error: the leave is already applied again.", "Error",
-					MB_OK);
 				return false;
 			}
 			addSchedule(seldate.toString(), currentUser.id, "leave", reason, "N");
 			cout << "apply leave with reason." << endl;
-			MessageBoxA(NULL, "Success: apply leave with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	else if (status.compare("sick") == 0) {
 		if (reason.empty()) {
 			if ((checkLeave(status, "NULL", today.toString(), currentUser.id)) == true) {
-				MessageBoxA(NULL, "Error: the sick is already applied again.", "Error",
-					MB_OK);
 				return false;
 			}
 			addSchedule(today.toString(), currentUser.id, "sick", "NULL", "Y");
 			cout << "apply sick without reason." << endl;
-			MessageBoxA(NULL, "Success: apply sick without reason.", "Success", MB_OK);
 		}
 		else {
 			if ((checkLeave(status, reason, today.toString(), currentUser.id)) == true) {
-				MessageBoxA(NULL, "Error: the sick is already applied again.", "Error",
-					MB_OK);
 				return false;
 			}
 			addSchedule(today.toString(), currentUser.id, "sick", reason, "Y");
 			cout << "apply sick with reason." << endl;
-			MessageBoxA(NULL, "Success: apply sick with reason.", "Success", MB_OK);
 		}
 		return true;
 	}
 	cout << "error: status error." << endl;
-	MessageBoxA(NULL, "the status is not set.", "Error",
-		MB_OK);
 	return false;
 }
 
@@ -342,20 +310,18 @@ bool DataServer::addStaff(string staffID,
 bool DataServer::deleteStaff(string staffID) {
 	string query = formatQuery("DELETE FROM staff WHERE id='%s';", staffID.c_str());
 	makeQuery(query);
+	query = formatQuery("DELETE FROM schedule WHERE staff_id='%s';", staffID.c_str());
+	makeQuery(query);
 	return true;
 }
 
 bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 {
 	if (staffID.empty()) {
-		MessageBoxA(NULL, "Error: the staffID is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
 	if (staffAuthority.empty()) {
-		MessageBoxA(NULL, "Error: the Authority is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
@@ -365,15 +331,12 @@ bool DataServer::setStaffAuthority(string staffID, string staffAuthority)
 		staffID.c_str()
 		);
 	makeQuery(query);
-	MessageBoxA(NULL, "Success: set authority success.", "Success", MB_OK);
 	return true;
 }
 
 bool DataServer::setCurrentUserPassword(string staffPassword)
 {
 	if (staffPassword.empty()) {
-		MessageBoxA(NULL, "Error: the password is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
@@ -385,15 +348,12 @@ bool DataServer::setCurrentUserPassword(string staffPassword)
 		currentUser.id.c_str()
 		);
 	makeQuery(query);
-	MessageBoxA(NULL, "Success: set password success.", "Success", MB_OK);
 	return true;
 }
 
 bool DataServer::setCurrentUserName(string staffName)
 {
 	if (staffName.empty()) {
-		MessageBoxA(NULL, "Error: the username is empty.", "Error",
-			MB_OK);
 		return false;
 	}
 
@@ -404,8 +364,7 @@ bool DataServer::setCurrentUserName(string staffName)
 		currentUser.name.c_str(),
 		currentUser.id.c_str()
 		);
-	makeQuery(query);
-	MessageBoxA(NULL, "Success: set username success.", "Success", MB_OK);
+	makeQuery(query);	
 	return true;
 }
 

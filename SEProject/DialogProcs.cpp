@@ -17,7 +17,8 @@ void moveToCenter(HWND target) {
 	screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, TRUE);
+	MoveWindow(target, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, 
+		windowWidth, windowHeight, TRUE);
 }
 
 Date getToday() {
@@ -80,7 +81,8 @@ void AccountDialog_handleAddStaff(HWND hwndDialog) {
 	ComboBox_GetText(GetDlgItem(hwndDialog, IDC_COMBO1), textBuffer, 32);
 	staffPosition = string(textBuffer);
 
-	dataServer.addStaff(staffID, DataServer::defaultStaffPassword, DataServer::defaultStaffName, staffPosition);
+	dataServer.addStaff(staffID, DataServer::defaultStaffPassword, DataServer::defaultStaffName,
+		staffPosition);
 	AccountDialog_updateListViewFromServer(GetDlgItem(hwndDialog, IDC_LIST1));
 }
 
@@ -120,12 +122,19 @@ void AuthorityDialog_handleSetAuthority(HWND hwndDialog) {
 	lvi.pszText = textBuffer;
 	lvi.cchTextMax = 32;
 
+	bool isSuccessful = true;
 	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
-	while (selectedIndex != -1) {
-		lvi.iItem = selectedIndex;
-		ListView_GetItem(hwndLV, &lvi);
-		dataServer.setStaffAuthority(string(lvi.pszText), staffPosition);
-		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	if (selectedIndex != -1) {
+		while (selectedIndex != -1) {
+			lvi.iItem = selectedIndex;
+			ListView_GetItem(hwndLV, &lvi);
+			isSuccessful &= dataServer.setStaffAuthority(string(lvi.pszText), staffPosition);
+			selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+		}
+		if (isSuccessful) 
+			MessageBox(NULL, "Success: set authority success.", "Success", MB_OK);
+		else 
+			MessageBox(NULL, "Error: set authority failed.", "Error", MB_OK);
 	}
 	AccountDialog_updateListViewFromServer(hwndLV);
 }
@@ -136,7 +145,10 @@ void SetpwDialog_handleSetName(HWND hwndDialog) {
 
 	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT1), textBuffer, 32);
 	staffName = string(textBuffer);
-	dataServer.setCurrentUserName(staffName);
+	if(dataServer.setCurrentUserName(staffName)) 
+		MessageBoxA(NULL, "Success: set username success.", "Success", MB_OK);
+	else 
+		MessageBoxA(NULL, "Error: fail to set user name.", "Error",MB_OK);
 }
 
 void SetpwDialog_handleSetPassword(HWND hwndDialog) {
@@ -145,7 +157,10 @@ void SetpwDialog_handleSetPassword(HWND hwndDialog) {
 
 	Edit_GetText(GetDlgItem(hwndDialog, IDC_EDIT2), textBuffer, 32);
 	staffPassword = string(textBuffer);
-	dataServer.setCurrentUserPassword(staffPassword);
+	if(dataServer.setCurrentUserPassword(staffPassword)) 
+		MessageBoxA(NULL, "Success: set password success.", "Success", MB_OK);
+	else 
+		MessageBoxA(NULL, "Error: fail to set password.", "Error",MB_OK);
 }
 
 void BrowseWeekDialog_initComboBox(HWND hwndDialog) {
@@ -265,7 +280,10 @@ void ApplyleaveDialog_handleApply(HWND hwndDialog)
 	cout << "today: " << today.wYear << " " << today.wMonth << " " << today.wDay << endl;
 	Date todate((int)lpToday->wYear, (int)lpToday->wMonth, (int)lpToday->wDay);
 
-	dataServer.applyLeave(leaveStatus, leaveReason, seldate, todate);
+	if(dataServer.applyLeave(leaveStatus, leaveReason, seldate, todate)) 
+		MessageBoxA(NULL, "Success: application success.", "Success", MB_OK);
+	else 
+		MessageBoxA(NULL, "Error: application failed.", "Error",MB_OK);
 }
 
 void ApproveleaveDialog_updateListViewFromData(HWND hwndLVTarget, const vector<Leave>& dataToSet)
@@ -343,17 +361,22 @@ void ApproveleaveDialog_handleApprove(HWND hwndDialog)
 	lvi.pszText = textBuffer;
 	lvi.cchTextMax = 32;
 
+	bool isSuccessful = true;
 	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
-	while (selectedIndex != -1) {
-		lvi.iItem = selectedIndex;
-		ListView_GetItem(hwndLV, &lvi);
-		ListView_GetItemText(hwndLV, lvi.iItem, 1, pID, 32); //get staffID
-		ListView_GetItemText(hwndLV, lvi.iItem, 3, pStatus, 32); //get status
-		ListView_GetItemText(hwndLV, lvi.iItem, 4, pReason, 32); //get reason
-		dataServer.approveLeave(string(lvi.pszText), string(pID), string(pStatus), string(pReason));
-		ListView_DeleteItem(hwndLV, selectedIndex);
-		--selectedIndex;
-		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	if (selectedIndex != -1) {
+		while (selectedIndex != -1) {
+			lvi.iItem = selectedIndex;
+			ListView_GetItem(hwndLV, &lvi);
+			ListView_GetItemText(hwndLV, lvi.iItem, 1, pID, 32); //get staffID
+			ListView_GetItemText(hwndLV, lvi.iItem, 3, pStatus, 32); //get status
+			ListView_GetItemText(hwndLV, lvi.iItem, 4, pReason, 32); //get reason
+			isSuccessful &= dataServer.approveLeave(string(lvi.pszText), string(pID), string(pStatus), string(pReason));
+			ListView_DeleteItem(hwndLV, selectedIndex);
+			--selectedIndex;
+			selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+		}
+		if(!isSuccessful) 
+			MessageBoxA(NULL, "Error: approval failed.", "Error",MB_OK);
 	}
 	ApproveleaveDialog_updateListViewFromServer(hwndLV);
 }
@@ -427,12 +450,19 @@ void SetleaveDialog_handleSetLeave(HWND hwndDialog)
 	lvi.pszText = textBuffer;
 	lvi.cchTextMax = 32;
 
+	bool isSuccessful = true;
 	int selectedIndex = ListView_GetNextItem(hwndLV, -1, LVNI_SELECTED);
-	while (selectedIndex != -1) {
-		lvi.iItem = selectedIndex;
-		ListView_GetItem(hwndLV, &lvi);
-		dataServer.setLeave(string(lvi.pszText), seldate, reason);
-		selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+	if (selectedIndex != -1) {
+		while (selectedIndex != -1) {
+			lvi.iItem = selectedIndex;
+			ListView_GetItem(hwndLV, &lvi);
+			isSuccessful &= dataServer.setLeave(string(lvi.pszText), seldate, reason);
+			selectedIndex = ListView_GetNextItem(hwndLV, selectedIndex, LVNI_SELECTED);
+		}
+		if(isSuccessful) 
+			MessageBoxA(NULL, "Success: set business with reason.", "Success", MB_OK);
+		else 
+			MessageBoxA(NULL, "Error: set business failed.", "Error",MB_OK);
 	}
 	SetleaveDialog_updateListViewFromServer(hwndLV);
 }
@@ -599,6 +629,8 @@ LRESULT CALLBACK LoginDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			GetDlgItemTextA(hwnd, IDC_PASSWORD, loginPassword, 20);
 			if (dataServer.login(loginUserName, loginPassword))
 				EndDialog(hwnd, 0);
+			else
+				MessageBoxA(NULL, "Failed to login", "Error", MB_OK | MB_ICONINFORMATION);
 
 			return TRUE;
 

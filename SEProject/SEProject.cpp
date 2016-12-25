@@ -1,6 +1,7 @@
 ﻿#include "resource.h"
 #include "DialogProcs.h"
 #include "Database.h"
+#include <iostream>
 
 using namespace std;
 
