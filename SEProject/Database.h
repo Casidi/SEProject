@@ -61,7 +61,7 @@ public:
 	bool getIsConnected();
 
 	bool addSchedule(string date, string staffID, string status, string reason, string isApproved);
-	bool DataServer::checkLeave(string status, string reason, string date, string id);
+	bool checkLeave(string status, string reason, string date, string id);
 
 	bool addStaff(string staffID,
 		string staffPassword = defaultStaffPassword,
